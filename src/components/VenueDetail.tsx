@@ -17,7 +17,7 @@ export default function VenueDetail({ venue }: VenueDetailProps) {
           <div className="grid grid-cols-2 gap-2 mb-8">
             <div className="col-span-2 aspect-[16/9] overflow-hidden border-2 border-dark rounded-md">
               <img
-                src={venue.imageUrl}
+                src={venue.photos?.[0] ?? ''}
                 alt={venue.name}
                 className="w-full h-full object-cover"
               />
@@ -62,7 +62,7 @@ export default function VenueDetail({ venue }: VenueDetailProps) {
             <div className="border-2 border-dark rounded-lg p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)]">
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="font-display font-extrabold text-2xl text-dark">
-                  {venue.priceEstimate}
+                  {venue.price_estimate ?? '—'}
                 </span>
                 <span className="text-text-muted text-sm font-medium">/ head</span>
               </div>

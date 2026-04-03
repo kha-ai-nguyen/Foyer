@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import type { Venue } from '@/types'
 
 interface VenueCardProps {
@@ -9,7 +8,19 @@ interface VenueCardProps {
   onFlip: () => void
 }
 
+function formatCapacity(venue: Venue): string {
+  if (venue.capacity_min && venue.capacity_max) {
+    return `${venue.capacity_min}–${venue.capacity_max}`
+  }
+  if (venue.capacity_max) return `Up to ${venue.capacity_max}`
+  if (venue.capacity_min) return `${venue.capacity_min}+`
+  return '—'
+}
+
 export default function VenueCard({ venue, isFlipped, onFlip }: VenueCardProps) {
+  const photo = venue.photos?.[0] ?? ''
+  const primaryEventType = venue.event_types?.[0] ?? ''
+
   return (
     <div
       className="cursor-pointer [perspective:1000px]"
@@ -25,13 +36,13 @@ export default function VenueCard({ venue, isFlipped, onFlip }: VenueCardProps) 
         <div className="absolute inset-0 backface-hidden bg-card border-2 border-dark rounded-md overflow-hidden">
           <div className="relative h-[60%] min-h-[250px]">
             <img
-              src={venue.imageUrl}
+              src={photo}
               alt={venue.name}
               className="w-full h-full object-cover border-b-2 border-dark"
             />
           </div>
           <div className="bg-dark text-primary text-[10px] font-bold uppercase tracking-widest px-4 py-2 border-b-2 border-dark">
-            {venue.eventType}
+            {primaryEventType}
           </div>
           <div className="p-4">
             <h3 className="font-display font-extrabold text-2xl uppercase text-dark leading-tight">
@@ -51,7 +62,7 @@ export default function VenueCard({ venue, isFlipped, onFlip }: VenueCardProps) 
                 Capacity
               </span>
               <span className="text-sm font-bold uppercase text-dark">
-                {venue.capacityRange}
+                {formatCapacity(venue)}
               </span>
             </div>
             <div className="text-right">
@@ -59,7 +70,7 @@ export default function VenueCard({ venue, isFlipped, onFlip }: VenueCardProps) 
                 Price
               </span>
               <span className="text-sm font-bold uppercase text-dark">
-                {venue.priceEstimate}
+                {venue.price_estimate ?? '—'}
               </span>
             </div>
           </div>

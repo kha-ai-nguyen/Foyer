@@ -83,7 +83,7 @@ export default function VenueListView({ venues }: VenueListViewProps) {
 
               {/* Thumbnail */}
               <img
-                src={venue.imageUrl}
+                src={venue.photos?.[0] ?? ''}
                 alt={venue.name}
                 className="w-16 h-16 object-cover rounded-sm border-2 border-dark flex-shrink-0"
               />
@@ -94,7 +94,7 @@ export default function VenueListView({ venues }: VenueListViewProps) {
                   {venue.name}
                 </h4>
                 <p className="text-[10px] text-text-muted uppercase tracking-widest font-bold">
-                  {venue.neighbourhood} · {venue.capacityRange}
+                  {venue.neighbourhood}{venue.capacity_max ? ` · Up to ${venue.capacity_max}` : ''}
                 </p>
               </div>
 

@@ -97,3 +97,12 @@ NEXT_PUBLIC_POSTHOG_KEY=
 - Create a Linear ticket before starting any feature
 - Flag build vs buy decisions explicitly
 - Remind to deploy to Vercel after meaningful changes
+
+## Task Completion Contract
+A task is NOT complete until:
+- The code runs without errors
+- The feature works (verified in browser)
+- `npm run build` passes
+- Changes are committed and pushed to main: 
+  `git add . && git commit -m "[description]" && git push origin main`
+- Project CLAUDE.md is updated if anything significant changed

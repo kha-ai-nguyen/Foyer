@@ -61,3 +61,12 @@ export interface Proposal {
   date_submitted: string
   date_responded: string | null
 }
+
+export interface TimeSavedData {
+  total_hours_saved: number
+  hours_this_month: number
+  enquiries_auto_processed: number
+  avg_response_time_minutes: number
+  manual_avg_response_time_minutes: number
+  proposals_auto_generated: number
+}

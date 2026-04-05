@@ -1,16 +1,8 @@
 // PHASE 2 — not yet wired to routing
 'use client'
 
+import type { TimeSavedData } from '@/types'
 import { Zap, Clock, MessageSquare, Send } from 'lucide-react'
-
-interface TimeSavedData {
-  total_hours_saved: number
-  hours_this_month: number
-  enquiries_auto_processed: number
-  avg_response_time_minutes: number
-  manual_avg_response_time_minutes: number
-  proposals_auto_generated: number
-}
 
 function GaugeArc({ percentage }: { percentage: number }) {
   // SVG arc for the gauge — 180-degree semicircle

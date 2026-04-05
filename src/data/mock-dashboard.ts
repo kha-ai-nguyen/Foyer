@@ -1,4 +1,4 @@
-import type { Enquiry, Proposal } from '@/types'
+import type { Enquiry, Proposal, TimeSavedData } from '@/types'
 
 export const mockEnquiries: Enquiry[] = [
   {
@@ -203,7 +203,7 @@ export const mockProposals: Proposal[] = [
 ]
 
 // Time-saved metrics (mock data representing venue admin savings)
-export const mockTimeSaved = {
+export const mockTimeSaved: TimeSavedData = {
   total_hours_saved: 23.5,
   hours_this_month: 8.2,
   enquiries_auto_processed: 14,

@@ -1,7 +1,7 @@
 // PHASE 2 — not yet wired to routing
 'use client'
 
-import type { Enquiry, Proposal } from '@/types'
+import type { Enquiry, Proposal, TimeSavedData } from '@/types'
 import BookingPipeline from './BookingPipeline'
 import BookingsBoard from './BookingsBoard'
 import TimeSavedMeter from './TimeSavedMeter'
@@ -9,15 +9,6 @@ import { Inbox, FileText, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 
 type DashboardTab = 'pipeline' | 'proposals' | 'insights'
-
-interface TimeSavedData {
-  total_hours_saved: number
-  hours_this_month: number
-  enquiries_auto_processed: number
-  avg_response_time_minutes: number
-  manual_avg_response_time_minutes: number
-  proposals_auto_generated: number
-}
 
 interface VenueDashboardProps {
   enquiries: Enquiry[]

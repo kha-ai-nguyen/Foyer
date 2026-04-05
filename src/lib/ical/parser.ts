@@ -17,7 +17,7 @@ export async function parseIcalFeed(url: string): Promise<ParsedEvent[]> {
   const parsed: ParsedEvent[] = []
 
   for (const [, component] of Object.entries(events)) {
-    if (component.type !== 'VEVENT') continue
+    if (!component || component.type !== 'VEVENT') continue
 
     const event = component as ical.VEvent
     if (!event.start) continue
@@ -35,9 +35,18 @@ export async function parseIcalFeed(url: string): Promise<ParsedEvent[]> {
       (event.start as ical.DateWithTimeZone)?.dateOnly === true ||
       (typeof event.datetype === 'string' && event.datetype === 'date')
 
+    // summary can be a plain string or { val: string, params: ... }
+    const rawSummary = event.summary
+    const title =
+      rawSummary == null
+        ? null
+        : typeof rawSummary === 'string'
+          ? rawSummary
+          : rawSummary.val
+
     parsed.push({
       uid: event.uid ?? crypto.randomUUID(),
-      title: event.summary ?? null,
+      title,
       starts_at,
       ends_at,
       all_day: allDay,

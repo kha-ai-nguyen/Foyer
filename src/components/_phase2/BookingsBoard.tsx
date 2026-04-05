@@ -3,28 +3,13 @@
 
 import { useState } from 'react'
 import type { Proposal, ProposalStatus } from '@/types'
+import { formatDateFull, formatCurrency } from '@/lib/utils'
 import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react'
 
 const STATUS_CONFIG: Record<ProposalStatus, { label: string; icon: typeof Clock; bg: string; text: string }> = {
   submitted: { label: 'Submitted', icon: Clock, bg: 'bg-base-deep', text: 'text-dark' },
   accepted: { label: 'Accepted', icon: CheckCircle, bg: 'bg-primary', text: 'text-dark' },
   declined: { label: 'Declined', icon: XCircle, bg: 'bg-dark', text: 'text-white' },
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 0,
-  }).format(amount)
 }
 
 function ProposalRow({ proposal }: { proposal: Proposal }) {
@@ -35,11 +20,13 @@ function ProposalRow({ proposal }: { proposal: Proposal }) {
   return (
     <div className="bg-card border-2 border-dark rounded-md overflow-hidden">
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center gap-4 hover:bg-base/30 transition-colors text-left"
+        aria-expanded={expanded}
+        className="w-full p-4 flex items-center gap-4 hover:bg-base/30 transition-colors text-left focus-visible:outline-2 focus-visible:outline-dark"
       >
         {/* Status badge */}
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${config.bg} ${config.text} border border-dark/20`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${config.bg} ${config.text} border-2 border-dark`}>
           <StatusIcon className="w-3 h-3" />
           {config.label}
         </span>
@@ -50,7 +37,7 @@ function ProposalRow({ proposal }: { proposal: Proposal }) {
             {proposal.booker_name}
           </span>
           <span className="text-text-muted text-xs ml-2">
-            {proposal.event_type} · {formatDate(proposal.event_date)}
+            {proposal.event_type} · {formatDateFull(proposal.event_date)}
           </span>
         </div>
 
@@ -90,7 +77,7 @@ function ProposalRow({ proposal }: { proposal: Proposal }) {
               Sent
             </span>
             <span className="text-sm font-bold text-dark">
-              {formatDate(proposal.date_submitted)}
+              {formatDateFull(proposal.date_submitted)}
             </span>
           </div>
           <div>
@@ -98,7 +85,7 @@ function ProposalRow({ proposal }: { proposal: Proposal }) {
               Responded
             </span>
             <span className="text-sm font-bold text-dark">
-              {proposal.date_responded ? formatDate(proposal.date_responded) : '—'}
+              {proposal.date_responded ? formatDateFull(proposal.date_responded) : '—'}
             </span>
           </div>
         </div>

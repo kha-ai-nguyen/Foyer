@@ -2,6 +2,7 @@
 'use client'
 
 import type { Enquiry, EnquiryStage } from '@/types'
+import { formatDateShort } from '@/lib/utils'
 import { User, Calendar, Users, Mail } from 'lucide-react'
 
 const STAGE_META: Record<EnquiryStage, { label: string; color: string }> = {
@@ -20,13 +21,6 @@ const PIPELINE_STAGES: EnquiryStage[] = [
   'declined',
 ]
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-  })
-}
-
 function EnquiryCard({ enquiry }: { enquiry: Enquiry }) {
   return (
     <div className="bg-card border-2 border-dark rounded-md p-4 space-y-3 hover:shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] transition-shadow">
@@ -42,7 +36,7 @@ function EnquiryCard({ enquiry }: { enquiry: Enquiry }) {
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 text-text-muted">
           <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="text-xs font-medium">{formatDate(enquiry.event_date)}</span>
+          <span className="text-xs font-medium">{formatDateShort(enquiry.event_date)}</span>
         </div>
         <div className="flex items-center gap-2 text-text-muted">
           <Users className="w-3.5 h-3.5 flex-shrink-0" />
@@ -62,15 +56,23 @@ function EnquiryCard({ enquiry }: { enquiry: Enquiry }) {
         </p>
       )}
 
-      <div className="flex items-center justify-between pt-1 border-t border-dark/10">
+      <div className="flex items-center justify-between pt-1 border-t-2 border-dark">
         <span className="text-[10px] text-text-muted font-medium">
-          {formatDate(enquiry.created_at)}
+          {formatDateShort(enquiry.created_at)}
         </span>
         <div className="flex gap-1">
-          <button className="w-6 h-6 flex items-center justify-center border border-dark/20 rounded hover:bg-primary hover:border-dark transition-colors">
+          <button
+            type="button"
+            aria-label={`Email ${enquiry.booker_name}`}
+            className="w-6 h-6 flex items-center justify-center border-2 border-dark rounded hover:bg-primary transition-colors focus-visible:outline-2 focus-visible:outline-dark"
+          >
             <Mail className="w-3 h-3" />
           </button>
-          <button className="w-6 h-6 flex items-center justify-center border border-dark/20 rounded hover:bg-primary hover:border-dark transition-colors">
+          <button
+            type="button"
+            aria-label={`View contact for ${enquiry.booker_name}`}
+            className="w-6 h-6 flex items-center justify-center border-2 border-dark rounded hover:bg-primary transition-colors focus-visible:outline-2 focus-visible:outline-dark"
+          >
             <User className="w-3 h-3" />
           </button>
         </div>
@@ -110,13 +112,13 @@ export default function BookingPipeline({ enquiries }: { enquiries: Enquiry[] })
                 <span className="text-[10px] font-bold uppercase tracking-widest text-dark">
                   {meta.label}
                 </span>
-                <span className="ml-auto text-[10px] font-bold text-text-muted bg-white border border-dark/20 rounded px-1.5 py-0.5">
+                <span className="ml-auto text-[10px] font-bold text-text-muted bg-white border-2 border-dark rounded px-1.5 py-0.5">
                   {items.length}
                 </span>
               </div>
 
               {/* Column body */}
-              <div className="flex-1 bg-base-deep/30 border-2 border-dark/10 rounded-md p-2 space-y-2 min-h-[200px]">
+              <div className="flex-1 bg-base-deep/30 border-2 border-dark rounded-md p-2 space-y-2 min-h-[200px]">
                 {items.length > 0 ? (
                   items.map((enquiry) => (
                     <EnquiryCard key={enquiry.id} enquiry={enquiry} />

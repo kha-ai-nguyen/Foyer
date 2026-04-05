@@ -20,3 +20,44 @@ export interface Venue {
   last_confirmed_at: string | null
   created_at: string
 }
+
+// Phase 2 — Enquiry & Proposal types
+
+export type EnquiryStage =
+  | 'new'
+  | 'contacted'
+  | 'proposal_sent'
+  | 'accepted'
+  | 'declined'
+
+export interface Enquiry {
+  id: string
+  venue_id: string
+  booker_name: string
+  booker_email: string
+  event_type: EventType
+  event_date: string
+  headcount: number
+  budget: string | null
+  message: string | null
+  stage: EnquiryStage
+  created_at: string
+  updated_at: string
+}
+
+export type ProposalStatus = 'submitted' | 'accepted' | 'declined'
+
+export interface Proposal {
+  id: string
+  venue_id: string
+  enquiry_id: string
+  booker_name: string
+  event_type: EventType
+  event_date: string
+  headcount: number
+  price_per_head: number
+  total_value: number
+  status: ProposalStatus
+  date_submitted: string
+  date_responded: string | null
+}

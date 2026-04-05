@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle, Users, DollarSign, ArrowRight } from 'lucide-react'
+import { CheckCircle, Users, DollarSign, ArrowRight, BadgeCheck } from 'lucide-react'
 import { getVenueBySlug, getAvailabilityBlocks, getEnquiriesByVenue } from '@/lib/supabase/queries'
 import AvailabilityCalendar from './AvailabilityCalendar'
 import { ClaimModal } from './ClaimModal'
@@ -145,10 +145,15 @@ export default async function VenueProfilePage({ params }: PageProps) {
                   {capacityLabel}
                 </div>
               )}
-              {venue.price_estimate && (
+              {(venue.price_per_head != null || venue.price_estimate) && (
                 <div className="flex items-center gap-1.5 border-2 border-[#1A1A1A] bg-white px-3 py-1.5 text-sm font-bold">
                   <DollarSign size={14} />
-                  {venue.price_estimate}
+                  {venue.price_per_head != null
+                    ? `£${Math.round(venue.price_per_head)}/head`
+                    : venue.price_estimate}
+                  {venue.price_per_head != null && (
+                    <BadgeCheck size={14} className="text-[#CDEA2D]" />
+                  )}
                 </div>
               )}
             </div>
@@ -242,10 +247,17 @@ export default async function VenueProfilePage({ params }: PageProps) {
                 </div>
               )}
 
-              {venue.price_estimate && (
+              {(venue.price_per_head != null || venue.price_estimate) && (
                 <div className="flex items-center gap-2 text-sm">
                   <DollarSign size={14} className="text-[#6B5068]" />
-                  <span className="font-medium">{venue.price_estimate}</span>
+                  <span className="font-medium">
+                    {venue.price_per_head != null
+                      ? `£${Math.round(venue.price_per_head)}/head`
+                      : venue.price_estimate}
+                  </span>
+                  {venue.price_per_head != null && (
+                    <BadgeCheck size={14} className="text-[#CDEA2D]" />
+                  )}
                 </div>
               )}
 

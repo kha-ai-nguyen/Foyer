@@ -69,7 +69,19 @@ export default function ProfileEditor({ venue }: Props) {
           />
         </div>
 
-        {/* Price estimate */}
+        {/* Verified price (read-only, auto-computed from proposals) */}
+        {venue.price_per_head != null && (
+          <div>
+            <label className="block text-xs font-bold uppercase text-[#6B5068] mb-1">
+              Verified price per head
+            </label>
+            <div className="w-full border-2 border-[#1A1A1A] bg-[#F5F5F5] px-3 py-2 text-sm text-[#6B5068]">
+              £{Math.round(venue.price_per_head)}/head — auto-calculated from proposals
+            </div>
+          </div>
+        )}
+
+        {/* Price estimate (fallback — editable only when no verified price) */}
         <div>
           <label className="block text-xs font-bold uppercase text-[#6B5068] mb-1">
             Price estimate
@@ -79,8 +91,14 @@ export default function ProfileEditor({ venue }: Props) {
             value={priceEstimate}
             onChange={e => setPriceEstimate(e.target.value)}
             placeholder="e.g. £75/head or £££"
-            className="w-full border-2 border-[#1A1A1A] bg-white px-3 py-2 text-sm outline-none focus:border-[#CDEA2D] transition-colors"
+            disabled={venue.price_per_head != null}
+            className="w-full border-2 border-[#1A1A1A] bg-white px-3 py-2 text-sm outline-none focus:border-[#CDEA2D] transition-colors disabled:bg-[#F5F5F5] disabled:text-[#6B5068]"
           />
+          {venue.price_per_head != null && (
+            <p className="text-xs text-[#6B5068] mt-1">
+              Overridden by the verified price above.
+            </p>
+          )}
         </div>
 
         {/* Max capacity */}

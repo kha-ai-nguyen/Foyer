@@ -274,6 +274,27 @@ export async function getConversationsByEventId(eventId: string): Promise<Conver
   return data ?? []
 }
 
+// ─── Venue dashboard ──────────────────────────────────────────────────────────
+
+export async function getConversationsByVenueId(venueId: string) {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(`
+      id,
+      created_at,
+      space_id,
+      event_id,
+      event:events(id, event_type, headcount, budget_per_head_max, date_from, booker_name),
+      space:spaces(id, name, capacity, base_price)
+    `)
+    .eq('venue_id', venueId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data ?? []
+}
+
 // ─── Availability ─────────────────────────────────────────────────────────────
 
 export async function getAvailabilityBlocks(spaceId: string): Promise<string[]> {

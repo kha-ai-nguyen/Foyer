@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getBookerEvent } from '@/lib/supabase/queries'
+import BookerNav from '@/components/BookerNav'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +31,9 @@ export default async function EventPage({
       : 'Flexible'
 
   return (
-    <main className="min-h-screen bg-base px-4 py-12">
+    <>
+      <BookerNav />
+      <main className="md:ml-[250px] px-6 py-10">
       <div className="max-w-xl mx-auto">
         <p className="text-xs uppercase tracking-widest font-medium text-text-muted mb-2">
           Your event
@@ -89,6 +92,7 @@ export default async function EventPage({
           </Link>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   )
 }

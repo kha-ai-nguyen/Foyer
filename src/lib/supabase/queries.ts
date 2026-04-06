@@ -59,7 +59,7 @@ export async function getSpacesWithFilters(filters: SpaceFilters = {}): Promise<
     const spaceIds = spaces.map((s) => s.id)
 
     let blockQuery = supabase
-      .from('availability_blocks')
+      .from('availability')
       .select('space_id, blocked_date')
       .in('space_id', spaceIds)
 
@@ -279,7 +279,7 @@ export async function getConversationsByEventId(eventId: string): Promise<Conver
 export async function getAvailabilityBlocks(spaceId: string): Promise<string[]> {
   const supabase = createServiceClient()
   const { data, error } = await supabase
-    .from('availability_blocks')
+    .from('availability')
     .select('blocked_date')
     .eq('space_id', spaceId)
     .order('blocked_date', { ascending: true })
@@ -295,7 +295,7 @@ export async function toggleAvailabilityBlock(
   const supabase = createServiceClient()
 
   const { data: existing } = await supabase
-    .from('availability_blocks')
+    .from('availability')
     .select('id')
     .eq('space_id', spaceId)
     .eq('blocked_date', date)
@@ -306,7 +306,7 @@ export async function toggleAvailabilityBlock(
     return { blocked: false }
   } else {
     await supabase
-      .from('availability_blocks')
+      .from('availability')
       .insert({ space_id: spaceId, blocked_date: date })
     return { blocked: true }
   }

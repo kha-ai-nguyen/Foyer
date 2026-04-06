@@ -51,9 +51,9 @@ export interface Venue {
   placeholder_image_url: string | null
 }
 
-export interface AvailabilityBlock {
+export interface Availability {
   id: string
-  space_id: string | null      // new: space-scoped calendar
+  space_id: string | null      // space-scoped calendar
   venue_id: string | null      // legacy: kept for backward compat
   blocked_date: string         // YYYY-MM-DD
   note: string | null

@@ -43,8 +43,8 @@ ALTER TABLE events
   ADD COLUMN IF NOT EXISTS postcode text,
   ADD COLUMN IF NOT EXISTS radius_km int DEFAULT 5;
 
--- 3. Create availability_blocks if it doesn't exist, or add space_id if it does
-CREATE TABLE IF NOT EXISTS availability_blocks (
+-- 3. Create availability if it doesn't exist, or add space_id if it does
+CREATE TABLE IF NOT EXISTS availability (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   venue_id uuid REFERENCES venues(id) ON DELETE CASCADE,
   space_id uuid REFERENCES spaces(id) ON DELETE CASCADE,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS availability_blocks (
 );
 
 -- If the table already existed without space_id, add it
-ALTER TABLE availability_blocks
+ALTER TABLE availability
   ADD COLUMN IF NOT EXISTS space_id uuid REFERENCES spaces(id) ON DELETE CASCADE;
 
 -- 4. Create conversations table if it doesn't exist

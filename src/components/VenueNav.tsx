@@ -17,6 +17,7 @@ export default function VenueNav({ slug, venueName }: Props) {
     { label: 'Calendar', href: `/dashboard/${slug}/calendar` },
     { label: 'Payment Terms', href: `/dashboard/${slug}/payment-terms` },
     { label: 'Proposals', href: `/dashboard/${slug}/proposals` },
+    { label: 'Pipeline', href: `/dashboard/${slug}/pipeline` },
   ]
 
   function isActive(href: string) {

@@ -73,10 +73,16 @@ export default async function EventPage({
         {/* CTAs */}
         <div className="space-y-3">
           <Link
-            href={`/explore?event=${id}`}
+            href={`/events/${id}/results`}
             className="block w-full bg-primary text-dark font-display font-bold text-lg uppercase text-center py-4 rounded-xl border-2 border-dark hover:bg-dark hover:text-primary transition-colors"
           >
-            Browse spaces →
+            View results →
+          </Link>
+          <Link
+            href={`/explore?event=${id}`}
+            className="block w-full bg-white text-dark font-display font-bold text-lg uppercase text-center py-4 rounded-xl border-2 border-dark hover:bg-base-deep transition-colors"
+          >
+            Browse spaces
           </Link>
           <Link
             href={`/events/${id}/options`}

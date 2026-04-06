@@ -7,8 +7,7 @@
 INSERT INTO venues (
   name, slug, neighbourhood, description,
   capacity_min, capacity_max, price_estimate,
-  event_types, photos, website, claimed,
-  claimed_by_name, claimed_by_email, claimed_by_role
+  event_types, photos, website
 )
 VALUES
   (
@@ -24,11 +23,7 @@ VALUES
       'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80',
       'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80'
     ],
-    'https://morchella.co.uk',
-    true,
-    'James Reid',
-    'james@morchella.co.uk',
-    'General Manager'
+    'https://morchella.co.uk'
   ),
   (
     'Boxcar',
@@ -43,11 +38,7 @@ VALUES
       'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&q=80',
       'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&q=80'
     ],
-    'https://boxcarhackney.co.uk',
-    true,
-    'Sarah Okafor',
-    'sarah@boxcarhackney.co.uk',
-    'Events Manager'
+    'https://boxcarhackney.co.uk'
   ),
   (
     'Tamila',
@@ -62,11 +53,7 @@ VALUES
       'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=800&q=80',
       'https://images.unsplash.com/photo-1516997121675-4c2d1684aa3e?w=800&q=80'
     ],
-    'https://tamila.co.uk',
-    true,
-    'Amara Williams',
-    'amara@tamila.co.uk',
-    'Owner'
+    'https://tamila.co.uk'
   )
 ON CONFLICT (slug) DO NOTHING;
 

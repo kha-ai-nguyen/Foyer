@@ -2,19 +2,13 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import ResultsRow, { type ResultSpace } from '@/components/ResultsRow'
+import MasonryTile from '@/components/MasonryTile'
+import FeaturedCarousel from '@/components/FeaturedCarousel'
+import ResultsToolbar, { type SortKey } from './ResultsToolbar'
+import type { MasonrySpace } from './mockSpaces'
 import type { BookerEvent } from '@/types'
 
-type SortKey = 'distance' | 'price_asc' | 'price_desc' | 'alpha'
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'distance', label: 'Distance' },
-  { key: 'price_asc', label: 'Price ↑' },
-  { key: 'price_desc', label: 'Price ↓' },
-  { key: 'alpha', label: 'A–Z' },
-]
-
-function sortSpaces(spaces: ResultSpace[], key: SortKey): ResultSpace[] {
+function sortSpaces(spaces: MasonrySpace[], key: SortKey): MasonrySpace[] {
   return [...spaces].sort((a, b) => {
     if (key === 'distance') return a.distance_km - b.distance_km
     if (key === 'price_asc') return a.total_price - b.total_price
@@ -23,17 +17,8 @@ function sortSpaces(spaces: ResultSpace[], key: SortKey): ResultSpace[] {
   })
 }
 
-function formatDate(d: string | null) {
-  if (!d) return null
-  return new Date(d).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 interface Props {
-  spaces: ResultSpace[]
+  spaces: MasonrySpace[]
   event: BookerEvent
   dateFrom: string | null
   dateTo: string | null
@@ -51,6 +36,13 @@ export default function ResultsGrid({ spaces, event, dateFrom, dateTo }: Props) 
   const available = sorted.filter((s) => s.available)
   const unavailable = sorted.filter((s) => !s.available)
 
+  // Featured spaces for the top carousel (pick available featured/large tiles)
+  const featured = available.filter((s) => s.tileSize === 'featured').slice(0, 5)
+
+  // Masonry grid spaces: all available (minus featured shown in carousel) + unavailable at end
+  const masonryAvailable = available.filter((s) => !featured.includes(s))
+  const masonrySpaces = [...masonryAvailable, ...unavailable]
+
   function applyDates() {
     const params = new URLSearchParams()
     if (localDateFrom) params.set('dateFrom', localDateFrom)
@@ -58,90 +50,26 @@ export default function ResultsGrid({ spaces, event, dateFrom, dateTo }: Props) 
     startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
-  const effectiveFrom = dateFrom ?? event.date_from
-  const effectiveTo = dateTo ?? event.date_to
-
-  const dateLabel =
-    effectiveFrom && effectiveTo
-      ? `${formatDate(effectiveFrom)} – ${formatDate(effectiveTo)}`
-      : effectiveFrom
-      ? formatDate(effectiveFrom)
-      : 'Flexible dates'
-
   return (
     <div>
-      {/* Sticky header */}
-      <div className="sticky top-14 z-30 bg-white border-2 border-dark rounded-2xl shadow-[4px_4px_0_#1A1A1A] mb-8 overflow-hidden">
-        {/* Event summary bar */}
-        <div className="px-5 py-3 border-b-2 border-dark flex items-center gap-4 flex-wrap bg-dark">
-          <span className="font-display font-extrabold uppercase text-primary text-sm tracking-widest">
-            {event.event_type}
-          </span>
-          <span className="text-white/70 text-sm">{event.headcount} guests</span>
-          {event.budget_per_head_max && (
-            <span className="text-white/70 text-sm">£{event.budget_per_head_max}/head budget</span>
-          )}
-          {event.postcode && (
-            <span className="text-white/70 text-sm font-mono">{event.postcode} · {event.radius_km}km</span>
-          )}
-          <span className="text-white/70 text-sm">{dateLabel}</span>
-        </div>
+      <ResultsToolbar
+        event={event}
+        sort={sort}
+        onSortChange={setSort}
+        dateFrom={localDateFrom}
+        dateTo={localDateTo}
+        onDateFromChange={setLocalDateFrom}
+        onDateToChange={setLocalDateTo}
+        onApplyDates={applyDates}
+        totalCount={spaces.length}
+        availableCount={available.length}
+        unavailableCount={unavailable.length}
+      />
 
-        {/* Controls row */}
-        <div className="px-5 py-3 flex items-center gap-4 flex-wrap">
-          {/* Sort */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted mr-1">Sort:</span>
-            {SORT_OPTIONS.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setSort(key)}
-                className={`px-3 py-1.5 rounded-lg border-2 text-xs font-bold uppercase tracking-wide transition-colors ${
-                  sort === key
-                    ? 'bg-primary border-dark text-dark'
-                    : 'bg-white border-dark text-dark hover:bg-base-deep'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Date change */}
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Dates:</span>
-            <input
-              type="date"
-              value={localDateFrom}
-              onChange={(e) => setLocalDateFrom(e.target.value)}
-              className="border-2 border-dark rounded-lg px-2 py-1 text-xs font-mono text-dark bg-white focus:outline-none focus:border-primary"
-            />
-            <span className="text-text-muted text-xs">–</span>
-            <input
-              type="date"
-              value={localDateTo}
-              onChange={(e) => setLocalDateTo(e.target.value)}
-              className="border-2 border-dark rounded-lg px-2 py-1 text-xs font-mono text-dark bg-white focus:outline-none focus:border-primary"
-            />
-            <button
-              onClick={applyDates}
-              className="bg-dark text-primary text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-lg hover:bg-secondary hover:text-white transition-colors"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Results count */}
-      <div className="mb-5">
-        <p className="text-sm text-text-muted">
-          <strong className="text-dark">{available.length}</strong> space{available.length !== 1 ? 's' : ''} available
-          {unavailable.length > 0 && (
-            <span> · <span className="text-secondary">{unavailable.length} unavailable</span></span>
-          )}
-        </p>
-      </div>
+      {/* Featured carousel */}
+      {featured.length > 0 && (
+        <FeaturedCarousel spaces={featured} eventId={event.id} />
+      )}
 
       {/* No results */}
       {spaces.length === 0 && (
@@ -161,34 +89,35 @@ export default function ResultsGrid({ spaces, event, dateFrom, dateTo }: Props) 
         </div>
       )}
 
-      {/* Available spaces */}
-      <div className="space-y-6">
-        {available.map((space) => (
-          <ResultsRow key={space.id} space={space} eventId={event.id} />
-        ))}
-      </div>
-
-      {/* Unavailable spaces */}
-      {unavailable.length > 0 && (
-        <>
-          <div className="my-8 flex items-center gap-4">
-            <div className="flex-1 border-t-2 border-dark/20" />
-            <span className="text-xs font-bold uppercase tracking-widest text-text-muted">
-              Not available on these dates
-            </span>
-            <div className="flex-1 border-t-2 border-dark/20" />
-          </div>
-          <div className="space-y-6">
-            {unavailable.map((space) => (
-              <ResultsRow
+      {/* Masonry grid */}
+      {masonrySpaces.length > 0 && (
+        <div
+          className="gap-4"
+          style={{
+            columns: 1,
+            columnGap: '1rem',
+          }}
+        >
+          {/* Responsive columns via CSS */}
+          <style>{`
+            @media (min-width: 640px) {
+              .masonry-grid { columns: 2 !important; }
+            }
+            @media (min-width: 1024px) {
+              .masonry-grid { columns: 3 !important; }
+            }
+          `}</style>
+          <div className="masonry-grid" style={{ columns: 1, columnGap: '1rem' }}>
+            {masonrySpaces.map((space, i) => (
+              <MasonryTile
                 key={space.id}
                 space={space}
                 eventId={event.id}
-                unavailableReason="Not available on these dates"
+                index={i}
               />
             ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   )

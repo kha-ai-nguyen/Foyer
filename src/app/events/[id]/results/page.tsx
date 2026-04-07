@@ -3,8 +3,8 @@ import { getBookerEvent } from '@/lib/supabase/queries'
 import { createServiceClient } from '@/lib/supabase/client'
 import BookerNav from '@/components/BookerNav'
 import ResultsGrid from './ResultsGrid'
+import { generateMockSpaces, type MasonrySpace } from './mockSpaces'
 import type { Space } from '@/types'
-import type { ResultSpace } from '@/components/ResultsRow'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,26 +68,45 @@ export default async function ResultsPage({
   const effectiveDateFrom = sp.dateFrom ?? event.date_from
   const effectiveDateTo = sp.dateTo ?? event.date_to
 
-  const { spaces, blockedIds } = await getSpacesForEvent({
+  const { spaces: dbSpaces, blockedIds } = await getSpacesForEvent({
     headcount: event.headcount,
     budgetMax: event.budget_per_head_max,
     dateFrom: effectiveDateFrom,
     dateTo: effectiveDateTo,
   })
 
-  // Augment spaces with availability + fake distance + total_price
-  const resultSpaces: ResultSpace[] = spaces.map((space: Space & { venue: { id: string; name: string; neighbourhood: string } }, i: number) => ({
-    ...space,
-    available: !blockedIds.has(space.id),
-    distance_km: FAKE_DISTANCES[i % FAKE_DISTANCES.length],
-    total_price: space.base_price * event.headcount + (space.payment_min_spend ?? 0),
-  }))
+  // Convert DB spaces to MasonrySpace format
+  const dbResultSpaces: MasonrySpace[] = dbSpaces.map(
+    (space: Space & { venue: { id: string; name: string; neighbourhood: string } }, i: number) => {
+      const photoCount = space.photos?.length ?? 0
+      const capacity = space.capacity
+      let tileSize: MasonrySpace['tileSize']
+      if (photoCount >= 4 || capacity >= 200) tileSize = 'featured'
+      else if (photoCount >= 3 || capacity >= 100) tileSize = 'large'
+      else if (i % 3 === 0) tileSize = 'small'
+      else tileSize = 'medium'
+
+      return {
+        ...space,
+        available: !blockedIds.has(space.id),
+        distance_km: FAKE_DISTANCES[i % FAKE_DISTANCES.length],
+        total_price: space.base_price * event.headcount + (space.payment_min_spend ?? 0),
+        tileSize,
+      }
+    }
+  )
+
+  // Use mock data to fill up to 50 spaces for a rich visual experience
+  const mockSpaces = generateMockSpaces(event.headcount)
+  const allSpaces = dbResultSpaces.length > 0
+    ? [...dbResultSpaces, ...mockSpaces.slice(dbResultSpaces.length)]
+    : mockSpaces
 
   return (
     <>
       <BookerNav />
-      <main className="md:ml-[250px] px-4 md:px-8 py-8">
-        <div className="max-w-4xl mx-auto">
+      <main className="md:ml-[250px] px-4 md:px-6 py-8">
+        <div className="max-w-6xl mx-auto">
           <div className="mb-6">
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">
               Results
@@ -98,7 +117,7 @@ export default async function ResultsPage({
           </div>
 
           <ResultsGrid
-            spaces={resultSpaces}
+            spaces={allSpaces}
             event={event}
             dateFrom={sp.dateFrom ?? null}
             dateTo={sp.dateTo ?? null}

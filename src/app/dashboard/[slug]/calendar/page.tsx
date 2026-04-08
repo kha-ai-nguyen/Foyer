@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/client'
-import { getSpacesByVenue } from '@/lib/supabase/queries'
+import { getSpacesByVenue, getAvailabilityForAllSpaces } from '@/lib/supabase/queries'
 import CalendarClient from './CalendarClient'
 
 export const dynamic = 'force-dynamic'
@@ -24,20 +24,23 @@ export default async function CalendarPage({
   const venue = await getVenueBySlug(slug)
   if (!venue) notFound()
 
-  const spaces = await getSpacesByVenue(venue.id)
+  const [spaces, blocks] = await Promise.all([
+    getSpacesByVenue(venue.id),
+    getAvailabilityForAllSpaces(venue.id),
+  ])
 
   return (
-    <div className="px-8 py-8 max-w-2xl">
+    <div className="px-8 py-8 max-w-3xl">
       <div className="mb-8">
         <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">
           {venue.neighbourhood}
         </p>
         <h1 className="font-display font-extrabold text-3xl uppercase text-dark">Calendar</h1>
         <p className="text-sm text-text-muted mt-1">
-          Block dates when your space is unavailable. Blocked dates are hidden from bookers.
+          View blocked dates across all spaces. Edit individual space calendars from the space detail page.
         </p>
       </div>
-      <CalendarClient spaces={spaces} />
+      <CalendarClient spaces={spaces} initialBlocks={blocks} />
     </div>
   )
 }

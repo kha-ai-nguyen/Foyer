@@ -82,6 +82,38 @@ const migrations: { label: string; sql: string }[] = [
   approved boolean NOT NULL DEFAULT false
 );`,
   },
+  {
+    label: 'Add slug column to spaces',
+    sql: 'ALTER TABLE spaces ADD COLUMN IF NOT EXISTS slug text;',
+  },
+  {
+    label: 'Add description column to spaces',
+    sql: 'ALTER TABLE spaces ADD COLUMN IF NOT EXISTS description text;',
+  },
+  {
+    label: 'Add amenities column to spaces',
+    sql: "ALTER TABLE spaces ADD COLUMN IF NOT EXISTS amenities jsonb DEFAULT '{}';",
+  },
+  {
+    label: 'Generate slugs for existing spaces',
+    sql: `UPDATE spaces SET slug = lower(regexp_replace(regexp_replace(name, '[^a-zA-Z0-9\\s-]', '', 'g'), '\\s+', '-', 'g')) WHERE slug IS NULL;`,
+  },
+  {
+    label: 'Add unique constraint on space slug per venue',
+    sql: 'CREATE UNIQUE INDEX IF NOT EXISTS spaces_venue_slug_idx ON spaces (venue_id, slug);',
+  },
+  {
+    label: 'Create menu_packages table',
+    sql: `CREATE TABLE IF NOT EXISTS menu_packages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  space_id uuid NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  price_per_head int,
+  file_url text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);`,
+  },
 ]
 
 async function runMigration(label: string, sql: string): Promise<boolean> {

@@ -18,9 +18,12 @@ export interface Space {
   id: string
   venue_id: string
   name: string
+  slug: string | null
   capacity: number
   base_price: number           // price per head (£)
+  description: string | null
   photos: string[]
+  amenities: Record<string, boolean>
   payment_deposit_pct: number | null
   payment_min_spend: number | null
   payment_pay_ahead: boolean
@@ -28,6 +31,31 @@ export interface Space {
   // joined fields (optional, present when fetched with venue)
   venue?: Venue
 }
+
+export interface MenuPackage {
+  id: string
+  space_id: string
+  name: string
+  description: string | null
+  price_per_head: number | null
+  file_url: string | null
+  created_at: string
+}
+
+export const SPACE_AMENITIES = [
+  { key: 'wifi', label: 'WiFi' },
+  { key: 'wheelchair_access', label: 'Wheelchair Access' },
+  { key: 'private_entrance', label: 'Private Entrance' },
+  { key: 'outdoor_area', label: 'Outdoor Area' },
+  { key: 'cloakroom', label: 'Cloakroom' },
+  { key: 'stage_dance_floor', label: 'Stage / Dance Floor' },
+  { key: 'catering_kitchen', label: 'Catering Kitchen' },
+  { key: 'projector_screen', label: 'Projector / Screen' },
+  { key: 'sound_system', label: 'Sound System' },
+  { key: 'natural_daylight', label: 'Natural Daylight' },
+  { key: 'late_license', label: 'Late License' },
+  { key: 'parking', label: 'Parking' },
+] as const
 
 export interface Venue {
   id: string

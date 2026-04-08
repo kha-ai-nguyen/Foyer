@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSpace } from '@/lib/supabase/queries'
+import { slugify } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   let body: {
@@ -7,7 +8,9 @@ export async function POST(req: NextRequest) {
     name?: string
     capacity?: number
     base_price?: number
+    description?: string | null
     photos?: string[]
+    amenities?: Record<string, boolean>
     payment_deposit_pct?: number | null
     payment_min_spend?: number | null
     payment_pay_ahead?: boolean
@@ -27,9 +30,12 @@ export async function POST(req: NextRequest) {
     const space = await createSpace({
       venue_id: body.venue_id,
       name: body.name,
+      slug: slugify(body.name),
       capacity: body.capacity,
       base_price: body.base_price,
+      description: body.description ?? null,
       photos: body.photos ?? [],
+      amenities: body.amenities ?? {},
       payment_deposit_pct: body.payment_deposit_pct ?? null,
       payment_min_spend: body.payment_min_spend ?? null,
       payment_pay_ahead: body.payment_pay_ahead ?? false,

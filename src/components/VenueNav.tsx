@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import RoleToggle from '@/components/RoleToggle'
 
 type Props = {
   slug: string
@@ -10,6 +11,7 @@ type Props = {
 
 export default function VenueNav({ slug, venueName }: Props) {
   const pathname = usePathname()
+  const router = useRouter()
 
   const NAV_LINKS = [
     { label: 'Profile', href: `/dashboard/${slug}/profile` },
@@ -24,6 +26,16 @@ export default function VenueNav({ slug, venueName }: Props) {
 
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-14 bottom-0 w-[250px] bg-base border-r-2 border-dark z-40 pt-6">
+      {/* Role toggle */}
+      <div className="px-3 mb-5">
+        <RoleToggle
+          activeRole="venue"
+          onSwitch={(role) => {
+            if (role === 'booker') router.push('/events')
+          }}
+        />
+      </div>
+
       {/* Venue header */}
       <div className="px-5 mb-6">
         <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-0.5">

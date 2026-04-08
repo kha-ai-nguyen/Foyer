@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import type { ExtractedVenueData } from '@/types'
+import PDFUploadWidget from '@/components/PDFUploadWidget'
+import ExtractedDataReview from '@/components/ExtractedDataReview'
 
 type VenueProfile = {
   id: string
@@ -198,6 +201,83 @@ export default function VenueProfilePage() {
           )}
         </div>
       </form>
+
+      {/* Import brochure section */}
+      <ImportBrochureSection slug={slug} />
+    </div>
+  )
+}
+
+// ── Import brochure section ─────────────────────────────────────────────────
+
+function ImportBrochureSection({ slug }: { slug: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [step, setStep] = useState<'upload' | 'review' | 'success'>('upload')
+  const [extractedData, setExtractedData] = useState<ExtractedVenueData | null>(null)
+
+  function handleReset() {
+    setExtractedData(null)
+    setStep('upload')
+  }
+
+  return (
+    <div className="mt-10 border-t-2 border-dark/10 pt-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-display font-bold text-xl uppercase text-dark">Import brochure</h2>
+          <p className="text-sm text-text-muted mt-1">
+            Upload a PDF brochure to auto-extract your spaces.
+          </p>
+        </div>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="border-2 border-dark rounded-xl px-4 py-2 text-sm font-semibold hover:bg-base-deep transition-colors"
+        >
+          {expanded ? 'Hide' : 'Upload PDF'}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="bg-white border-2 border-dark rounded-2xl p-6">
+          {step === 'upload' && (
+            <PDFUploadWidget
+              slug={slug}
+              onExtracted={(data) => {
+                setExtractedData(data)
+                setStep('review')
+              }}
+            />
+          )}
+          {step === 'review' && extractedData && (
+            <div className="space-y-4">
+              <div className="bg-primary/20 border-2 border-primary rounded-xl px-4 py-3">
+                <p className="text-sm font-bold text-dark">
+                  Extracted {extractedData.spaces?.length ?? 0} space{extractedData.spaces?.length !== 1 ? 's' : ''}.
+                  Review and edit below.
+                </p>
+              </div>
+              <ExtractedDataReview
+                data={extractedData}
+                slug={slug}
+                onSaved={() => setStep('success')}
+                onReset={handleReset}
+              />
+            </div>
+          )}
+          {step === 'success' && (
+            <div className="text-center py-6">
+              <p className="font-display font-bold text-lg uppercase text-dark mb-2">Spaces imported!</p>
+              <p className="text-sm text-text-muted mb-4">Your spaces have been extracted and saved.</p>
+              <button
+                onClick={handleReset}
+                className="border-2 border-dark rounded-xl px-5 py-2.5 font-semibold text-sm hover:bg-base-deep transition-colors"
+              >
+                Import another
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

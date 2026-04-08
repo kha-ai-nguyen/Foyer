@@ -91,61 +91,108 @@ function addDays(days: number): Date {
 
 // ── Card ────────────────────────────────────────────────────────────────────
 
-function Card({ card }: { card: ProposalCard }) {
+function Card({ card, slug }: { card: ProposalCard; slug: string }) {
   const hoursWaiting = (Date.now() - new Date(card.last_message_at).getTime()) / 3600000
   const isIncoming = card.status === 'incoming'
   const accentColor = EVENT_TYPE_COLORS[card.event_type] ?? '#1A1A1A'
   const urgencyColor = isIncoming ? getUrgencyColor(hoursWaiting) : '#1A1A1A'
 
   return (
-    <Link href={`/conversations/${card.conversation_id}`}>
-      <div
-        className="bg-white border-2 border-dark rounded-xl p-4 cursor-pointer transition-all hover:shadow-[4px_4px_0_#1A1A1A] hover:-translate-y-0.5 relative overflow-hidden"
-        style={{ borderLeftColor: accentColor, borderLeftWidth: 4 }}
-      >
-        {/* Event date */}
-        <p className="font-display font-extrabold text-lg text-dark leading-none mb-1">
-          {formatEventDate(card.event_date)}
-        </p>
+    <div
+      className="bg-white border-2 border-dark rounded-xl p-4 transition-all hover:shadow-[4px_4px_0_#1A1A1A] hover:-translate-y-0.5 relative overflow-hidden"
+      style={{ borderLeftColor: accentColor, borderLeftWidth: 4 }}
+    >
+      {/* Event date */}
+      <p className="font-display font-extrabold text-lg text-dark leading-none mb-1">
+        {formatEventDate(card.event_date)}
+      </p>
 
-        {/* Headcount + event type */}
-        <p className="text-sm font-semibold text-dark">
-          {card.headcount} guests · {card.event_type}
-        </p>
+      {/* Headcount + event type */}
+      <p className="text-sm font-semibold text-dark">
+        {card.headcount} guests · {card.event_type}
+      </p>
 
-        {/* Space name */}
-        <p className="text-xs text-text-muted mt-0.5">{card.space_name}</p>
+      {/* Space name */}
+      <p className="text-xs text-text-muted mt-0.5">{card.space_name}</p>
 
-        {/* Budget */}
-        <p className="text-xs text-text-muted mt-0.5">
-          £{card.booker_budget_per_head}/head budget
-        </p>
+      {/* Budget */}
+      <p className="text-xs text-text-muted mt-0.5">
+        £{card.booker_budget_per_head}/head budget
+      </p>
 
-        {/* Time waiting — incoming only */}
-        {isIncoming && (
-          <div className="flex items-center gap-1 mt-2">
-            <span style={{ color: urgencyColor }} className="text-sm">⏰</span>
-            <span
-              className="text-[11px] font-bold"
-              style={{ color: urgencyColor }}
-            >
-              {getUrgencyLabel(hoursWaiting)}
-            </span>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div className="mt-3 text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-secondary">
-          View thread →
+      {/* Time waiting — incoming only */}
+      {isIncoming && (
+        <div className="flex items-center gap-1 mt-2">
+          <span style={{ color: urgencyColor }} className="text-sm">⏰</span>
+          <span
+            className="text-[11px] font-bold"
+            style={{ color: urgencyColor }}
+          >
+            {getUrgencyLabel(hoursWaiting)}
+          </span>
         </div>
+      )}
+
+      {/* Action buttons per stage */}
+      <div className="flex flex-wrap gap-2 mt-3">
+        {card.status === 'incoming' && (
+          <>
+            <Link
+              href={`/conversations/${card.conversation_id}`}
+              className="text-[10px] font-bold uppercase tracking-widest bg-primary border border-dark rounded-lg px-2.5 py-1 hover:bg-dark hover:text-primary transition-colors"
+            >
+              Respond
+            </Link>
+            <button className="text-[10px] font-bold uppercase tracking-widest border border-dark rounded-lg px-2.5 py-1 hover:bg-secondary hover:text-white hover:border-secondary transition-colors">
+              Decline
+            </button>
+          </>
+        )}
+        {card.status === 'awaiting_response' && (
+          <Link
+            href={`/conversations/${card.conversation_id}`}
+            className="text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-secondary"
+          >
+            View thread →
+          </Link>
+        )}
+        {card.status === 'in_negotiation' && (
+          <>
+            <Link
+              href={`/dashboard/${slug}/proposals/builder?conversation_id=${card.conversation_id}`}
+              className="text-[10px] font-bold uppercase tracking-widest bg-primary border border-dark rounded-lg px-2.5 py-1 hover:bg-dark hover:text-primary transition-colors"
+            >
+              Generate proposal
+            </Link>
+            <Link
+              href={`/conversations/${card.conversation_id}`}
+              className="text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-secondary"
+            >
+              View thread →
+            </Link>
+          </>
+        )}
+        {card.status === 'confirmed' && (
+          <Link
+            href={`/conversations/${card.conversation_id}`}
+            className="text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-secondary"
+          >
+            View details →
+          </Link>
+        )}
+        {card.status === 'declined' && (
+          <button className="text-[10px] font-bold uppercase tracking-widest border border-dark rounded-lg px-2.5 py-1 hover:bg-primary transition-colors">
+            Reopen
+          </button>
+        )}
       </div>
-    </Link>
+    </div>
   )
 }
 
 // ── Column ───────────────────────────────────────────────────────────────────
 
-function Column({ stage, cards }: { stage: Stage; cards: ProposalCard[] }) {
+function Column({ stage, cards, slug }: { stage: Stage; cards: ProposalCard[]; slug: string }) {
   const sorted = [...cards].sort(
     (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
   )
@@ -186,7 +233,7 @@ function Column({ stage, cards }: { stage: Stage; cards: ProposalCard[] }) {
                     <div className="flex-1 border-t border-dark/20" />
                   </div>
                 )}
-                <Card card={card} />
+                <Card card={card} slug={slug} />
               </div>
             )
           })
@@ -286,7 +333,7 @@ export default function PipelineClient({ venueName, slug }: Props) {
       >
         {(['incoming', 'awaiting_response', 'in_negotiation', 'confirmed', 'declined'] as Stage[]).map(
           (stage) => (
-            <Column key={stage} stage={stage} cards={byStage(stage)} />
+            <Column key={stage} stage={stage} cards={byStage(stage)} slug={slug} />
           )
         )}
       </div>

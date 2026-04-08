@@ -14,11 +14,8 @@ export default function VenueNav({ slug, venueName }: Props) {
   const NAV_LINKS = [
     { label: 'Profile', href: `/dashboard/${slug}/profile` },
     { label: 'Spaces', href: `/dashboard/${slug}/spaces` },
-    { label: 'Import', href: `/dashboard/${slug}/import` },
-    { label: 'Calendar', href: `/dashboard/${slug}/calendar` },
-    { label: 'Payment Terms', href: `/dashboard/${slug}/payment-terms` },
-    { label: 'Proposals', href: `/dashboard/${slug}/proposals` },
     { label: 'Pipeline', href: `/dashboard/${slug}/pipeline` },
+    { label: 'Calendar', href: `/dashboard/${slug}/calendar` },
   ]
 
   function isActive(href: string) {

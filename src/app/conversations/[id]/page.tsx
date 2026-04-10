@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 import { getConversation, getConversationMessages } from '@/lib/supabase/queries'
+import { createServiceClient } from '@/lib/supabase/client'
 import type { Message } from '@/types'
 import FollowUpPanel from './FollowUpPanel'
+import SendProposalPanel from './SendProposalPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +12,18 @@ const PLACEHOLDER_PHOTOS = [
   'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80',
   'https://images.unsplash.com/photo-1530023367847-a683933f4172?w=800&q=80',
 ]
+
+async function getProposalForConversation(conversationId: string) {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('proposals')
+    .select('id, status, price_per_head, total_estimate')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return data
+}
 
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -48,14 +62,21 @@ function SpaceHero({
   space,
   venue,
 }: {
-  space: { name: string; capacity: number; base_price: number; photos: string[]; payment_deposit_pct: number | null; payment_min_spend: number | null; payment_pay_ahead: boolean }
+  space: {
+    name: string
+    capacity: number
+    base_price: number
+    photos: string[]
+    payment_deposit_pct: number | null
+    payment_min_spend: number | null
+    payment_pay_ahead: boolean
+  }
   venue: { name: string; neighbourhood: string } | null
 }) {
   const photos = space.photos?.length > 0 ? space.photos : PLACEHOLDER_PHOTOS
 
   return (
     <div className="bg-white border-2 border-dark rounded-2xl overflow-hidden mb-6">
-      {/* Photos strip */}
       <div
         className="flex gap-1 h-48 overflow-x-auto"
         style={{ scrollbarWidth: 'none' }}
@@ -69,7 +90,6 @@ function SpaceHero({
         ))}
       </div>
 
-      {/* Details */}
       <div className="p-5">
         <p className="text-xs uppercase tracking-widest text-text-muted font-medium mb-0.5">
           {venue?.name ?? 'Venue'} · {venue?.neighbourhood ?? ''}
@@ -118,14 +138,16 @@ export default async function ConversationPage({
 }) {
   const { id } = await params
 
-  const [conversation, messages] = await Promise.all([
+  const [conversation, messages, existingProposal] = await Promise.all([
     getConversation(id).catch(() => null),
     getConversationMessages(id).catch(() => [] as Message[]),
+    getProposalForConversation(id).catch(() => null),
   ])
 
   if (!conversation) notFound()
 
   const event = conversation.event as {
+    id: string
     event_type: string
     headcount: number
     date_from: string | null
@@ -144,6 +166,7 @@ export default async function ConversationPage({
   } | null
 
   const venue = conversation.venue as {
+    id: string
     name: string
     slug: string
     neighbourhood: string
@@ -158,6 +181,7 @@ export default async function ConversationPage({
     : '—'
 
   const eventType = event?.event_type ?? 'Event'
+  const headcount = event?.headcount ?? 0
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-10">
@@ -170,12 +194,12 @@ export default async function ConversationPage({
           {eventType} · {dateLabel}
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          {event?.headcount ?? '—'} guests
+          {headcount} guests
           {event?.budget_per_head_max ? ` · £${event.budget_per_head_max}/head max` : ''}
         </p>
       </div>
 
-      {/* Space hero card (shown if conversation has a space) */}
+      {/* Space hero card */}
       {space && <SpaceHero space={space} venue={venue} />}
 
       {/* Message thread */}
@@ -207,7 +231,22 @@ export default async function ConversationPage({
         )}
       </div>
 
-      {/* Follow-up questions panel */}
+      {/* Send Proposal panel (venue side) */}
+      {space && venue && event && (
+        <div className="mb-8">
+          <SendProposalPanel
+            conversationId={id}
+            venueId={venue.id}
+            eventId={event.id}
+            spaceBasePrice={space.base_price}
+            headcount={headcount}
+            existingProposalId={existingProposal?.id ?? null}
+            eventPath={`/events/${event.id}`}
+          />
+        </div>
+      )}
+
+      {/* Ask a question panel (booker side) */}
       <FollowUpPanel conversationId={id} eventType={eventType} />
     </main>
   )

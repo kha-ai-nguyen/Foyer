@@ -1,5 +1,5 @@
 import { createServiceClient } from './client'
-import type { Space, BookerEvent, Conversation, Message, MenuPackage } from '@/types'
+import type { Space, BookerEvent, Conversation, ConversationStatus, Message, MenuPackage } from '@/types'
 
 // ─── Spaces ──────────────────────────────────────────────────────────────────
 
@@ -76,28 +76,12 @@ export async function getSpacesWithFilters(filters: SpaceFilters = {}): Promise<
   return spaces
 }
 
-export async function getSpaceBySlug(venueId: string, spaceSlug: string): Promise<Space | null> {
-  const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('spaces')
-    .select('*, venue:venues(id, name, slug, neighbourhood)')
-    .eq('venue_id', venueId)
-    .eq('slug', spaceSlug)
-    .single()
-
-  if (error) return null
-  return data
-}
-
 export async function createSpace(data: {
   venue_id: string
   name: string
-  slug?: string
   capacity: number
   base_price: number
-  description?: string | null
   photos?: string[]
-  amenities?: Record<string, boolean>
   payment_deposit_pct?: number | null
   payment_min_spend?: number | null
   payment_pay_ahead?: boolean
@@ -117,12 +101,9 @@ export async function updateSpace(
   spaceId: string,
   data: Partial<{
     name: string
-    slug: string
     capacity: number
     base_price: number
-    description: string | null
     photos: string[]
-    amenities: Record<string, boolean>
     payment_deposit_pct: number | null
     payment_min_spend: number | null
     payment_pay_ahead: boolean
@@ -220,6 +201,7 @@ export async function getOrCreateConversation(
       event_id: eventId,
       venue_id: venueId ?? null,
       space_id: spaceId ?? null,
+      status: 'incoming',
     })
     .select('id')
     .single()
@@ -228,12 +210,26 @@ export async function getOrCreateConversation(
   return created.id
 }
 
+export async function updateConversationStatus(
+  conversationId: string,
+  status: ConversationStatus
+): Promise<void> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('conversations')
+    .update({ status })
+    .eq('id', conversationId)
+  if (error) throw error
+}
+
 export async function insertMessage(
   conversationId: string,
   fromType: 'booker' | 'venue' | 'felicity',
   messageText: string
 ): Promise<Message> {
   const supabase = createServiceClient()
+  const now = new Date().toISOString()
+
   const { data, error } = await supabase
     .from('messages')
     .insert({
@@ -245,6 +241,13 @@ export async function insertMessage(
     .single()
 
   if (error) throw error
+
+  // Keep last_message_at in sync
+  await supabase
+    .from('conversations')
+    .update({ last_message_at: now })
+    .eq('id', conversationId)
+
   return data
 }
 
@@ -301,14 +304,16 @@ export async function getConversationsByVenueId(venueId: string) {
     .from('conversations')
     .select(`
       id,
+      status,
       created_at,
+      last_message_at,
       space_id,
       event_id,
       event:events(id, event_type, headcount, budget_per_head_max, date_from, booker_name),
       space:spaces(id, name, capacity, base_price)
     `)
     .eq('venue_id', venueId)
-    .order('created_at', { ascending: false })
+    .order('last_message_at', { ascending: false, nullsFirst: false })
 
   if (error) throw error
   return data ?? []
@@ -350,90 +355,4 @@ export async function toggleAvailabilityBlock(
       .insert({ space_id: spaceId, blocked_date: date })
     return { blocked: true }
   }
-}
-
-// ─── Multi-space availability (venue calendar) ──────────────────────────────
-
-export async function getAvailabilityForAllSpaces(
-  venueId: string
-): Promise<{ space_id: string; blocked_date: string }[]> {
-  const supabase = createServiceClient()
-
-  // Get all space IDs for this venue
-  const { data: spaces } = await supabase
-    .from('spaces')
-    .select('id')
-    .eq('venue_id', venueId)
-
-  if (!spaces || spaces.length === 0) return []
-
-  const spaceIds = spaces.map((s) => s.id)
-
-  const { data, error } = await supabase
-    .from('availability')
-    .select('space_id, blocked_date')
-    .in('space_id', spaceIds)
-    .order('blocked_date', { ascending: true })
-
-  if (error) throw error
-  return data ?? []
-}
-
-// ─── Menu packages ──────────────────────────────────────────────────────────
-
-export async function getMenuPackagesBySpace(spaceId: string): Promise<MenuPackage[]> {
-  const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('menu_packages')
-    .select('*')
-    .eq('space_id', spaceId)
-    .order('created_at', { ascending: true })
-
-  if (error) throw error
-  return data ?? []
-}
-
-export async function createMenuPackage(data: {
-  space_id: string
-  name: string
-  description?: string | null
-  price_per_head?: number | null
-  file_url?: string | null
-}): Promise<MenuPackage> {
-  const supabase = createServiceClient()
-  const { data: pkg, error } = await supabase
-    .from('menu_packages')
-    .insert(data)
-    .select()
-    .single()
-
-  if (error) throw error
-  return pkg
-}
-
-export async function updateMenuPackage(
-  id: string,
-  data: Partial<{
-    name: string
-    description: string | null
-    price_per_head: number | null
-    file_url: string | null
-  }>
-): Promise<MenuPackage> {
-  const supabase = createServiceClient()
-  const { data: pkg, error } = await supabase
-    .from('menu_packages')
-    .update(data)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) throw error
-  return pkg
-}
-
-export async function deleteMenuPackage(id: string): Promise<void> {
-  const supabase = createServiceClient()
-  const { error } = await supabase.from('menu_packages').delete().eq('id', id)
-  if (error) throw error
 }

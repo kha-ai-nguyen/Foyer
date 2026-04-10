@@ -123,11 +123,20 @@ export interface Event {
   radius_km?: number
 }
 
+export type ConversationStatus =
+  | 'incoming'
+  | 'awaiting_response'
+  | 'in_negotiation'
+  | 'confirmed'
+  | 'declined'
+
 export interface Conversation {
   id: string
   event_id: string
   venue_id: string | null
   space_id: string | null
+  status: ConversationStatus
+  last_message_at: string | null
   created_at: string
   // joined fields
   event?: BookerEvent

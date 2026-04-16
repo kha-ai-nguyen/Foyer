@@ -1,8 +1,8 @@
-# Linear Tickets - Fete Phase 1 (KHA-1 to KHA-27)
+# Linear Tickets - Fete Phase 1–2 (KHA-1 to KHA-33)
 
 **Project:** Fete  
 **Team Key:** KHA  
-**Organization:** Phase-based cycles (Phase 1a Infrastructure → Phase 1b Booker + Phase 1c Venue CRM in parallel)
+**Organization:** Phase-based cycles (Phase 1a Infrastructure → Phase 1b Booker + Phase 1c Venue CRM in parallel → Phase 2 Public Directory + AEO/GEO)
 
 ---
 
@@ -46,33 +46,40 @@
 
 ## Phase 1a: Infrastructure (Blocking, Sprint 1–2)
 
-### KHA-1: 11 Labs Voice Agent Setup & Sandbox Testing
+### KHA-1: 11 Labs + Twilio Voice Infrastructure (Outbound + Inbound)
 - **Status:** Backlog
 - **Priority:** P0 Critical
 - **Labels:** `infrastructure`, `p0-critical`
 - **Cycle:** Phase 1a
-- **Estimate:** 5 days
+- **Estimate:** 7 days
 - **Description:**
-  Set up 11 Labs API integration and test voice agent capabilities in sandbox environment. This is the foundation for all outbound voice calling.
+  Set up 11 Labs Agents Platform + Twilio integration for both outbound voice calls (booker-initiated venue outreach) and inbound voice (venues receive AI-answered calls 24/7). This is the foundation for all voice-based communication in Fete.
 
 - **Acceptance Criteria:**
   - [ ] 11 Labs API key obtained and authenticated in `.env.local`
-  - [ ] Test sandbox call successfully placed to test number
+  - [ ] Twilio account created + API keys configured
+  - [ ] Twilio phone number provisioned (test inbound routing)
+  - [ ] 11 Labs Agents Platform connected to Twilio (native integration)
+  - [ ] **Outbound:** Test sandbox call successfully placed to test number
+  - [ ] **Inbound:** Inbound call routed to 11 Labs agent, agent answers + collects details
   - [ ] Voice model options tested (gender, accent variations documented)
-  - [ ] Success rate + latency metrics measured and documented
-  - [ ] Cost per minute calculated and recorded
-  - [ ] `/api/agent/voice/call` endpoint returns jobId for async tracking
+  - [ ] Success rate + latency metrics measured for both directions
+  - [ ] Cost per minute calculated (11 Labs + Twilio combined)
+  - [ ] Async job queue tested for scheduling outbound calls 9am-5pm
 
 - **Technical Details:**
-  - Create `/lib/agent/eleven-labs.ts` with 11 Labs SDK integration
-  - Implement `/api/agent/voice/call` endpoint for initiating calls
-  - Store call metadata (phone, script, start_time, expected_duration)
-  - Setup async job queue (Bull/BullMQ) for call scheduling
-  - Create Supabase table: `voice_calls` (id, venue_id, event_id, status, duration, transcription, created_at, completed_at)
+  - Create `/lib/agent/eleven-labs.ts` with 11 Labs Agents Platform SDK
+  - Create `/lib/agent/twilio.ts` with Twilio SDK (phone provisioning + routing)
+  - **Outbound:** Implement `/api/agent/voice/outbound-call` endpoint (triggered by KHA-8 Blast)
+  - **Inbound:** Configure Twilio webhook to route inbound calls to 11 Labs Agent (11 Labs handles conversation logic end-to-end)
+  - 11 Labs agent script: "Hi, thanks for calling [Venue]. Tell me about your event — what type of event, how many people, and when?"
+  - Setup async job queue (Bull/BullMQ) for scheduling outbound calls
+  - Create Supabase table: `voice_calls` (id, venue_id, event_id, direction, phone, status, duration, transcription, created_at, completed_at)
+  - Create Supabase table: `venue_phone_numbers` (venue_id, twilio_phone_sid, phone_number, enabled, created_at)
 
 ---
 
-### KHA-2: Voice Call Transcription & Storage Pipeline
+### KHA-2: Voice Call Transcription & Storage Pipeline (Outbound + Inbound)
 - **Status:** Backlog
 - **Priority:** P0 Critical
 - **Labels:** `infrastructure`, `p0-critical`
@@ -81,25 +88,29 @@
 - **Depends on:** KHA-1
 
 - **Description:**
-  Implement transcription pipeline for voice calls. Transcribed text must appear in conversation thread within 2 minutes of call completion.
+  Implement transcription pipeline for voice calls (both outbound and inbound). Transcribed text must appear in conversation thread within 2 minutes of call completion. Key data extracted automatically via Claude API.
 
 - **Acceptance Criteria:**
-  - [ ] Call transcription appears in `conversation_messages` within 2 minutes of call end
-  - [ ] Key data extraction (availability, price, decision timeline) works via Claude API
+  - [ ] Call transcription appears in `conversation_messages` within 2 minutes of call end (both directions)
+  - [ ] Key data extraction works: availability_dates, price_quote, contact_name, decision_timeline
   - [ ] Audio file stored encrypted in Supabase storage `/voice-calls/[venue_id]/[call_id].wav`
-  - [ ] Transcription accuracy tested on 5+ real test calls
+  - [ ] Transcription accuracy tested on 5+ real test calls (outbound + inbound)
   - [ ] Webhook from 11 Labs triggers transcription job (no polling)
+  - [ ] Inbound calls automatically matched to venue (phone number → venue lookup)
   - [ ] Failed transcriptions logged with error details + retry logic
 
 - **Technical Details:**
-  - Create `/api/agent/voice/transcribe` webhook endpoint (accept 11 Labs callback)
-  - Integrate speech-to-text provider (Deepgram, AssemblyAI, or 11 Labs native)
-  - Use Claude API with prompt to extract: availability_dates, price_quote, contact_name, decision_timeline, objections
+  - Create `/api/agent/voice/transcribe` webhook endpoint (accept 11 Labs callback for both directions)
+  - Integrate speech-to-text provider (11 Labs native or Deepgram/AssemblyAI)
+  - Use Claude API with prompt to extract: availability_dates, price_quote, contact_name, decision_timeline, objections, tone
+  - **Inbound routing:** Match Twilio phone_number to `venue_phone_numbers` table → auto-create or find conversation
   - Store in `conversation_messages` with:
     - `message_type: 'voice'`
-    - `extracted_data: { availability, price, contact_name, decision_timeline, objections }`
-    - `metadata: { duration, transcription_confidence, voice_model_used }`
+    - `direction: 'outbound'` or `'inbound'`
+    - `extracted_data: { availability_dates, price_quote, contact_name, decision_timeline, objections }`
+    - `metadata: { duration, transcription_confidence, voice_model_used, caller_phone }`
   - Add audio URL to message for playback in conversation thread
+  - Inbound calls auto-create conversation if new venue contact, or append to existing conversation
 
 ---
 
@@ -737,42 +748,220 @@
 
 ---
 
-## Phase 2: Advanced Features (Future)
+## Phase 2: Public Directory + AEO/GEO Integration (Sprint 5–6)
 
-### KHA-23: SMS Automation & Confirmations
-- **Priority:** P3 Backlog
-- **Estimate:** Phase 2
+**Strategic Context:** Google AI Mode (launched Apr 2026) is now a major distribution channel for venue bookings. Eight competitors (ResDiary, OpenTable, SevenRooms, etc.) surface in Google's agentic search. Fete needs a public-facing venue directory + real-time availability API to compete in this channel. All communication + data stays on Fete platform; the public directory just surfaces searchability for discovery + booking initiation.
 
-### KHA-24: Calendar Sync (Google Calendar / Outlook)
-- **Priority:** P3 Backlog
-- **Estimate:** Phase 2
+### KHA-30: Public Venue Directory & SEO
+- **Status:** Backlog
+- **Priority:** P1 High
+- **Labels:** `booker-explore`, `infrastructure`, `p1-high`
+- **Cycle:** Phase 2
+- **Estimate:** 4 days
 
-### KHA-25: Multi-Venue Coordination
-- **Priority:** P3 Backlog
-- **Estimate:** Phase 2
+- **Description:**
+  Create searchable public venue directory with SEO optimization for Google indexing. Venues opt into discoverability; all bookings flow through Fete platform.
 
-### KHA-26: Payment Processing Integration
-- **Priority:** P3 Backlog
-- **Estimate:** Phase 2
+- **Acceptance Criteria:**
+  - [ ] Each venue has public profile page: `/venues/{slug}`
+  - [ ] SEO meta tags (title, description, keywords), robots.txt, sitemap.xml configured
+  - [ ] schema.org markup: LocalBusiness + EventVenue for rich snippets
+  - [ ] Venues can toggle "Show in public directory" in profile settings
+  - [ ] Page includes: name, address, capacity, pricing, services, photos, availability status
+  - [ ] Mobile-responsive layout
+  - [ ] Indexed by Google (verified via Google Search Console)
 
-### KHA-27: External CRM Integrations (HubSpot, Pipedrive)
+- **Technical Details:**
+  - Create page template `app/(public)/venues/[slug]/page.tsx`
+  - Generate sitemap: `/sitemap.xml` (list all public venues)
+  - Configure next.js metadata API for dynamic SEO tags per venue
+  - schema.org markup: `LocalBusiness` (address, phone, rating) + `EventVenue` (capacity, availableLanguage)
+  - Add canonical tags to prevent duplicate indexing
+  - robots.txt: Allow `/venues/*`, disallow `/dashboard/*`, `/api/*`
+  - Track indexing via Google Search Console integration
+
+---
+
+### KHA-31: Real-Time Availability API
+- **Status:** Backlog
+- **Priority:** P1 High
+- **Labels:** `booker-explore`, `infrastructure`, `p1-high`
+- **Cycle:** Phase 2
+- **Estimate:** 5 days
+- **Depends on:** KHA-30
+
+- **Description:**
+  Public API endpoints for venue search + real-time availability. Powers Google AI Mode integration and booker discovery without caching stale data.
+
+- **Acceptance Criteria:**
+  - [ ] `/api/public/venues/search` endpoint: query by location, type, capacity, date; returns available venues
+  - [ ] `/api/public/venues/{id}/availability` endpoint: returns next 30 available dates (real-time, no cache)
+  - [ ] Both endpoints return: venue_id, name, address, capacity, price_per_head, available_dates, booking_url
+  - [ ] Availability calculated from: confirmed events (conversations.status='confirmed') + manual blocks (venue_unavailability)
+  - [ ] Search results paginated (20 per page), sortable by price, rating, response time
+  - [ ] API authenticated for partners (Google AI Mode); public queries rate-limited
+  - [ ] Response time <500ms for search queries
+
+- **Technical Details:**
+  - Create `/api/public/venues/search` endpoint (GET with query params: location, type, capacity, date, radius)
+  - Create `/api/public/venues/{id}/availability` endpoint (GET, returns real-time available dates)
+  - Query logic:
+    ```sql
+    -- Available dates calculation
+    SELECT DISTINCT date 
+    FROM generate_series(
+      CURRENT_DATE, 
+      CURRENT_DATE + '90 days'::interval, 
+      '1 day'::interval
+    ) AS date
+    WHERE NOT EXISTS (
+      SELECT 1 FROM events e
+      JOIN conversations c ON c.event_id = e.id
+      WHERE c.venue_id = $1 AND c.status = 'confirmed' AND e.date = date
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM venue_unavailability
+      WHERE venue_id = $1 AND start_date <= date AND end_date >= date
+    )
+    ORDER BY date;
+    ```
+  - Use Supabase full-text search or PostGIS for location-based queries
+  - Add database indexes: venues(location), conversations(venue_id, status), venue_unavailability(venue_id)
+  - Rate limiting: 100 requests/min for public (via API key), 10/min for anonymous
+  - Response caching via Redis (5 min TTL, invalidate on new booking)
+
+---
+
+### KHA-32: Google AI Mode Partnership Integration
+- **Status:** Backlog
+- **Priority:** P1 High
+- **Labels:** `booker-explore`, `infrastructure`, `p1-high`
+- **Cycle:** Phase 2
+- **Estimate:** 4 days
+- **Depends on:** KHA-31
+
+- **Description:**
+  Set up Fete as a Google AI Mode booking partner. Venues surface in Google's agentic search for private event queries; bookings flow through Fete.
+
+- **Acceptance Criteria:**
+  - [ ] Google AI Mode partnership agreement signed (or test partnership for pilot)
+  - [ ] Fete data feed integrated: `/api/partners/google-ai-mode/availability-feed`
+  - [ ] Feed updates every 15 minutes (or on-demand when booking changes)
+  - [ ] Feed includes: venue_id, name, location, capacity, price_per_head, available_dates, booking_url
+  - [ ] Booking flow: User searches "private dining London 50 people May 20" → Google shows Fete venues → user clicks → redirects to public booking page (KHA-33)
+  - [ ] Fete appears in Google Search results for venue + event type queries (UK first, then expand)
+
+- **Technical Details:**
+  - Research Google AI Mode requirements (API format, data schema, SLA)
+  - Create `/api/partners/google-ai-mode/availability-feed` endpoint (POST, authenticated with partner API key)
+  - Feed payload: `{ venues: [{ id, name, address, capacity, price_per_head, available_dates: ["2026-05-20", ...], booking_url }] }`
+  - Scheduled job (cron, every 15 min) to update feed if venues changed
+  - Set up tracking: Google Search Console integration, conversion tracking (user → Google → Fete → booking)
+  - Document: booking flow, error handling, SLA requirements
+
+---
+
+### KHA-33: Public Booking Initiation Flow
+- **Status:** Backlog
+- **Priority:** P1 High
+- **Labels:** `booker-explore`, `feature`, `p1-high`
+- **Cycle:** Phase 2
+- **Estimate:** 3 days
+- **Depends on:** KHA-30, KHA-32
+
+- **Description:**
+  Public-facing booking page where users discover venues and initiate event creation. Bridging layer from Google AI Mode discovery → Fete event creation → automated outreach.
+
+- **Acceptance Criteria:**
+  - [ ] Public booking page: `/book/{venue_slug}?date=2026-05-20&headcount=50`
+  - [ ] Pre-fills: selected venue, date, headcount from URL params
+  - [ ] Form captures: event_type, budget, booker_name, booker_email, guest list (optional)
+  - [ ] Creates `events` record + `conversation` record (status='new')
+  - [ ] Triggers KHA-8 (Blast outreach) automatically OR shows confirmation page + "send now" button
+  - [ ] Redirects to booker dashboard: `/my-events/[id]` with real-time proposal status
+  - [ ] Mobile-responsive form
+  - [ ] Success: "Your event is live! Venues are responding..."
+
+- **Technical Details:**
+  - Create page `app/(public)/book/[venue_slug]/page.tsx`
+  - Parse URL params: venue_slug, date, headcount
+  - Form component pre-fills venue + date + headcount
+  - On submit:
+    - Create `events` record (booker_id = guest account or authenticated user)
+    - Create `event_venues` record linking event → selected venue
+    - Create `conversation` record (status='new')
+    - Option A: Auto-trigger KHA-8 (Blast) immediately
+    - Option B: Show confirmation page with "Send Outreach Now" button
+  - Redirect to `/my-events/[id]` on success
+  - Send confirmation email to booker with event link + next steps
+
+---
+
+## Phase 3: Advanced Features (Future)
+
+### KHA-34: Calendar Sync (Google Calendar / Outlook)
+- **Priority:** P2 Medium
+- **Estimate:** Phase 3
+
+### KHA-35: Multi-Venue Coordination
+- **Priority:** P2 Medium
+- **Estimate:** Phase 3
+
+### KHA-36: Payment Processing Integration
+- **Priority:** P2 Medium
+- **Estimate:** Phase 3
+
+### KHA-37: External CRM Integrations (HubSpot, Pipedrive)
+- **Priority:** P2 Medium
+- **Estimate:** Phase 3
+
+### KHA-38: SMS Confirmations & Reminders (Post-Booking)
 - **Priority:** P3 Backlog
-- **Estimate:** Phase 2
+- **Estimate:** Phase 3
 
 ---
 
 ## Import Instructions
 
 1. **Create all labels** in Linear project settings first
-2. **Create cycles** for each phase (Phase 1a, Phase 1b, Phase 1c, Phase 2)
-3. **Create tickets** using this document (KHA-1 to KHA-27)
+2. **Create cycles** for each phase (Phase 1a, Phase 1b, Phase 1c, Phase 2, Phase 3)
+3. **Create tickets** using this document (KHA-1 to KHA-38)
    - Copy title + description + acceptance criteria
    - Assign appropriate labels, priority, cycle, estimate
-4. **Set up dependencies** in Linear (KHA-1 blocks KHA-2, etc.)
-5. **Start Phase 1a** immediately (infrastructure is critical path)
-6. **Parallelize Phase 1b + 1c** once Phase 1a is halfway done
+4. **Set up dependencies** in Linear:
+   - KHA-1 → KHA-2 (voice infrastructure foundation)
+   - KHA-3 → KHA-15 (email parsing feeds venue-side logging)
+   - KHA-4 → all conversation-dependent tickets
+   - KHA-8 → KHA-9, KHA-10 (booker dashboard depends on outreach)
+   - KHA-30 → KHA-31 → KHA-32 → KHA-33 (public directory pipeline)
+5. **Start Phase 1a** immediately (KHA-1 to KHA-4, blocking all downstream work)
+6. **Parallelize Phase 1b + 1c** once Phase 1a is 50% complete (Days 3–4)
+7. **Start Phase 2** once Phase 1a + 1b + 1c are complete (Week 4–5)
+
+---
+
+## Competitive Context & Key Decisions
+
+**Inbound Voice (KHA-1/KHA-2 with Twilio):**
+- Tripleseat + Sadie AI shows market demand for AI-powered inbound lead capture for private events
+- Venues lose ~30% of high-intent leads to missed calls
+- **Decision:** Extend 11 Labs Agents Platform to handle both outbound + inbound (via Twilio integration)
+- Single voice vendor keeps architecture simple; Twilio handles phone layer
+
+**Public Directory + Google AI Mode (KHA-30 to KHA-33):**
+- Google AI Mode (launched Apr 2026) is now a major distribution channel for venue bookings
+- 8 competitors already visible in Google's agentic search (ResDiary, OpenTable, SevenRooms, etc.)
+- Fete absent from this channel = missing booker discovery opportunity
+- **Decision:** Build public-facing venue directory with real-time availability API for AEO/GEO integration
+- Phase 2 priority (after Phase 1a infrastructure complete)
+- All communication + data stays on Fete; directory just surfaces searchability
+
+**Skipped: SMS Inbound**
+- Private events are high-touch, phone-native, email-native
+- SMS is for restaurants (same-day bookings), not Fete's market
+- **Decision:** Skip SMS inbound for now. Focus on phone (voice) + email
 
 ---
 
 **Last Updated:** 2026-04-16  
-**Status:** Ready for Linear creation
+**Status:** Ready for Linear creation (33 tickets across 3 phases)**

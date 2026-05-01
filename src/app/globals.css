@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -6,28 +7,21 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-base: #E0C5DA;
-  --color-base-deep: #C9A4C3;
-  --color-card: #FFFFFF;
-  --color-primary: #CDEA2D;
-  --color-secondary: #FF2D9B;
-  --color-dark: #1A1A1A;
-  --color-text-primary: #1A1A1A;
-  --color-text-muted: #6B5068;
+  --color-cream: #F4EDE4;
+  --color-clementine: #D97942;
+  --color-plum: #4A1F3F;
+  --color-ink: #1F1419;
+  --color-oat: #E8DFD2;
+  --color-mauve: #6B5C63;
 
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Syne', sans-serif;
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
 }
 
 body {
-  background-color: #E0C5DA;
-  color: #1A1A1A;
-  font-family: 'Inter', sans-serif;
+  background-color: #F4EDE4;
+  color: #1F1419;
+  font-family: 'Geist', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* 3D flip utilities — required for VenueCard */
-.preserve-3d { transform-style: preserve-3d; }
-.backface-hidden { backface-visibility: hidden; }
-.rotate-y-180 { transform: rotateY(180deg); }

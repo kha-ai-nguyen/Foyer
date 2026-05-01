@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import TopNav from "@/components/TopNav";
 
 export const metadata: Metadata = {
-  title: "Fete — London Venue Directory",
-  description: "Find and book stunning venues for large-scale private events in London",
+  title: "Foyer — Private Events, Handled.",
+  description: "Foyer's AI reads every private dining and event enquiry, qualifies the lead, and drafts a personalised reply in your voice — in under a minute.",
+  icons: {
+    icon: "/brand/foyer-favicon.svg",
+    apple: "/brand/foyer-favicon.png",
+  },
 };
 
 export default function RootLayout({
@@ -14,11 +17,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-base">
-        <TopNav />
-        <div className="pt-14">
-          {children}
-        </div>
+      <body className="min-h-screen" style={{ backgroundColor: "#F4EDE4" }}>
+        {children}
       </body>
     </html>
   );

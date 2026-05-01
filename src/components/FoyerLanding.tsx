@@ -16,19 +16,19 @@ const C = {
   dimmest: "rgba(107,92,99,0.4)",
 }
 
-// Plum-surface tokens (nav + footer)
+// Light text tokens (dark surfaces)
 const P = {
   text:   "#F4EDE4",
   dim:    "rgba(244,237,228,0.65)",
   dimmer: "rgba(244,237,228,0.38)",
-  border: "rgba(244,237,228,0.12)",
+  border: "rgba(244,237,228,0.08)",
 }
 
 const fraunces = `'Fraunces', Georgia, serif`
 const geist    = `'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
 
 // Texture loaded from public/brand/ — served by Next.js / Vercel
-const TEXTURE_URL = "/brand/foyer-texture.png"
+const TEXTURE_URL = "/brand/foyer-texture.webp"
 
 // ── CSS ───────────────────────────────────────────────────────────────────────
 // Fonts are loaded in globals.css — only component-specific styles here
@@ -97,33 +97,43 @@ function useContainerWidth(ref: React.RefObject<HTMLDivElement | null>): number 
 }
 
 // ── CUSTOM CURSOR ─────────────────────────────────────────────────────────────
+// Bypasses React state entirely — direct DOM writes on every mousemove are
+// far cheaper than triggering a React re-render at 60+ fps.
 function CustomCursor() {
-  const [pos, setPos]   = useState({ x: -200, y: -200 })
-  const [vis, setVis]   = useState(false)
-  const [down, setDown] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const mv = (e: MouseEvent) => { setPos({ x: e.clientX, y: e.clientY }); setVis(true) }
-    const ml = () => setVis(false)
-    const md = () => setDown(true)
-    const mu = () => setDown(false)
-    document.addEventListener("mousemove", mv)
-    document.addEventListener("mouseleave", ml)
-    document.addEventListener("mousedown", md)
-    document.addEventListener("mouseup", mu)
+    const el = ref.current
+    if (!el) return
+    let lx = 0, ly = 0, pressed = false
+
+    const place = (x: number, y: number) => {
+      el.style.transform = `translate(${x - 14}px, ${y - 14}px) scale(${pressed ? 0.79 : 1})`
+    }
+    const onMove  = (e: MouseEvent) => { lx = e.clientX; ly = e.clientY; el.style.opacity = "1"; place(lx, ly) }
+    const onLeave = () => { el.style.opacity = "0" }
+    const onDown  = () => { pressed = true;  place(lx, ly) }
+    const onUp    = () => { pressed = false; place(lx, ly) }
+
+    document.addEventListener("mousemove",  onMove,  { passive: true })
+    document.addEventListener("mouseleave", onLeave)
+    document.addEventListener("mousedown",  onDown)
+    document.addEventListener("mouseup",    onUp)
     return () => {
-      document.removeEventListener("mousemove", mv)
-      document.removeEventListener("mouseleave", ml)
-      document.removeEventListener("mousedown", md)
-      document.removeEventListener("mouseup", mu)
+      document.removeEventListener("mousemove",  onMove)
+      document.removeEventListener("mouseleave", onLeave)
+      document.removeEventListener("mousedown",  onDown)
+      document.removeEventListener("mouseup",    onUp)
     }
   }, [])
 
-  if (!vis) return null
-  const sz = down ? 22 : 28
   return (
-    <div style={{ position: "fixed", left: pos.x - sz / 2, top: pos.y - sz / 2, zIndex: 9999, pointerEvents: "none", mixBlendMode: "difference", transition: "left 0.04s, top 0.04s" }}>
-      <svg width={sz} height={sz} viewBox="0 0 360 360" fill="none">
+    <div ref={ref} style={{
+      position: "fixed", top: 0, left: 0, width: 28, height: 28,
+      zIndex: 9999, pointerEvents: "none", mixBlendMode: "difference",
+      opacity: 0, willChange: "transform",
+    }}>
+      <svg width="28" height="28" viewBox="0 0 360 360" fill="none">
         <rect x="103" y="47"  width="32"  height="267" rx="16" fill="#F4EDE4" />
         <rect x="103" y="47"  width="139" height="77"  rx="18" fill="#F4EDE4" />
         <rect x="154" y="157" width="103" height="57"  rx="18" fill="#F4EDE4" />
@@ -253,7 +263,7 @@ function Peekaboo({ cw }: { cw: number }) {
 
   return (
     <div ref={containerRef}
-      style={{ position: "relative", height: h, overflow: "hidden", background: C.plum }}
+      style={{ position: "relative", height: h, overflow: "hidden", background: C.ink }}
       onMouseMove={onMove} onMouseLeave={onLeave}
     >
       <div ref={bubbleRef} style={{
@@ -308,13 +318,10 @@ export default function FoyerLanding() {
         position: "sticky", top: 0, zIndex: 100,
         height: 56, display: "flex", alignItems: "center", justifyContent: "space-between",
         paddingLeft: px, paddingRight: px,
-        background: C.plum,
+        background: C.ink,
         borderBottom: `1px solid ${P.border}`,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <FoyerMark size={22} color={C.cream} />
-          <span style={{ fontFamily: fraunces, fontSize: 18, fontWeight: 500, color: C.cream, letterSpacing: "-0.01em" }}>foyer</span>
-        </div>
+        <img src="/brand/foyer-logo.svg" alt="foyer" style={{ height: 26 }} />
         <button className="btn-primary"
           onClick={() => document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" })}
           style={{ background: C.clem, color: C.ink, border: "none", borderRadius: 4, padding: "7px 18px", fontFamily: geist, fontSize: 13, fontWeight: 600, cursor: "none" }}>
@@ -427,41 +434,49 @@ export default function FoyerLanding() {
         </div>
       </section>
 
-      {divider}
+      {/* ── FOOTER ── */}
+      <footer id="waitlist" style={{
+        minHeight: 56, display: "flex", alignItems: "center",
+        justifyContent: "space-between", flexWrap: "wrap",
+        paddingLeft: px, paddingRight: px,
+        paddingTop: mob ? 14 : 0, paddingBottom: mob ? 14 : 0,
+        gap: 12,
+        background: C.ink,
+        borderTop: `1px solid ${P.border}`,
+      }}>
+        <img src="/brand/foyer-logo.svg" alt="foyer" style={{ height: 24 }} />
 
-      {/* ── FOOTER: CTA + LINKS ── */}
-      <footer id="waitlist" style={{ paddingLeft: px, paddingRight: px, paddingTop: mob ? 64 : 88, paddingBottom: mob ? 48 : 64, background: C.plum }}>
-        <FadeUp>
-          <div style={{ maxWidth: 540, marginBottom: mob ? 48 : 64 }}>
-            <h2 style={{ fontFamily: geist, fontSize: mob ? 32 : 46, fontWeight: 800, color: P.text, letterSpacing: "-0.04em", lineHeight: 1.05, marginBottom: 16 }}>
-              Don&apos;t be the venue<br />that replied on Tuesday.
-            </h2>
-            <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.65, marginBottom: 28 }}>
-              Join the waitlist. Design partners get free access, forever — and a direct line to the product.
-            </p>
-            <EmailForm stack={mob} dark />
-            <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer, marginTop: 14 }}>
-              Invite-only · London venues only · No credit card
-            </p>
-          </div>
-        </FadeUp>
+        <div style={{ display: "flex", alignItems: "center", gap: mob ? 8 : 12 }}>
+          {/* Email */}
+          <a href="mailto:kha-ai@findfoyer.com" aria-label="Email us" className="a-link"
+            style={{ display: "flex", alignItems: "center", color: P.dimmer }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="m2 7 10 7 10-7" />
+            </svg>
+          </a>
 
-        <div style={{ borderTop: `1px solid ${P.border}`, paddingTop: 28, display: "flex", flexDirection: mob ? "column" : "row", justifyContent: "space-between", alignItems: mob ? "flex-start" : "center", gap: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <FoyerMark size={18} color={P.dimmer} />
-            <span style={{ fontFamily: fraunces, fontSize: 15, fontWeight: 500, color: P.dim }}>foyer</span>
-            <span style={{ fontFamily: geist, fontSize: 12, color: P.dimmer, marginLeft: 8 }}>· findfoyer.com · London</span>
-          </div>
-          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-            <a className="a-link" href="#your-linkedin-url" target="_blank" rel="noreferrer"
-              style={{ fontFamily: geist, fontSize: 13, color: P.dimmer, textDecoration: "none" }}>
-              About the founder ↗
-            </a>
-            <a className="a-link" href="#your-calendly-url" target="_blank" rel="noreferrer"
-              style={{ fontFamily: geist, fontSize: 13, color: C.clem, textDecoration: "none", fontWeight: 500 }}>
-              Book a user interview →
-            </a>
-          </div>
+          {/* Join waitlist — outlined */}
+          <a href="mailto:kha-ai@findfoyer.com?subject=Join%20the%20Foyer%20waitlist" className="a-link"
+            style={{
+              fontFamily: geist, fontSize: 13, fontWeight: 600,
+              color: P.text, border: `1px solid rgba(244,237,228,0.22)`,
+              borderRadius: 4, padding: "6px 14px", textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}>
+            Join waitlist
+          </a>
+
+          {/* Be a beta tester — primary */}
+          <a href="mailto:kha-ai@findfoyer.com?subject=I%20want%20to%20be%20a%20Foyer%20beta%20tester" className="btn-primary"
+            style={{
+              fontFamily: geist, fontSize: 13, fontWeight: 700,
+              color: C.ink, background: C.clem,
+              borderRadius: 4, padding: "6px 16px", textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}>
+            Be a beta tester
+          </a>
         </div>
       </footer>
 

@@ -214,104 +214,26 @@ function EmailForm({ stack, compact, dark }: { stack?: boolean; compact?: boolea
   )
 }
 
-// ── MINI DASHBOARD (peekaboo content) ────────────────────────────────────────
-const MINI_COLS = [
-  { label: "Enquiry", color: "#6B5C63", cards: [
-    { name: "Sophie & James", sub: "Wedding Dinner · 60", date: "14 Jun", val: "£4,200", tag: "New",     tagBg: "#E8F4FD", tagC: "#1565C0" },
-    { name: "Condé Nast",     sub: "Brand Launch · 80",  date: "22 Jun", val: "£6,800", tag: "New",     tagBg: "#E8F4FD", tagC: "#1565C0" },
-    { name: "Margot Tavern",  sub: "Private Hire · 35",  date: "1 Jul",  val: "£2,100", tag: "Waiting", tagBg: "#F3E5F5", tagC: "#6A1B9A" },
-  ]},
-  { label: "Qualified", color: "#D97942", cards: [
-    { name: "Deloitte UK",    sub: "Team Dinner · 45", date: "18 Jun", val: "£5,500", tag: "Hot",  tagBg: "#FFF3E0", tagC: "#E65100" },
-    { name: "The Hendersons", sub: "Birthday · 24",    date: "28 Jun", val: "£1,800", tag: "Warm", tagBg: "#FFF8E1", tagC: "#F57F17" },
-  ]},
-  { label: "Proposal Sent", color: "#7B61A0", cards: [
-    { name: "Goldman Sachs", sub: "Client Dinner · 20", date: "5 Jul", val: "£9,200", tag: "Follow up", tagBg: "#FCE4EC", tagC: "#880E4F" },
-  ]},
-  { label: "Confirmed", color: "#2D6A4F", cards: [
-    { name: "Google DeepMind", sub: "Offsite · 55",     date: "10 Jun", val: "£7,400", tag: "Confirmed", tagBg: "#D8F3DC", tagC: "#2D6A4F" },
-    { name: "Rachel & Tom",    sub: "Anniversary · 18", date: "12 Jun", val: "£1,400", tag: "Confirmed", tagBg: "#D8F3DC", tagC: "#2D6A4F" },
-  ]},
-]
-
-function MiniDashboard() {
-  return (
-    <div style={{ display: "flex", width: "100%", height: "100%", fontFamily: geist, userSelect: "none" }}>
-      <div style={{ width: 200, background: "#4A1F3F", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0 }}>
-        <div style={{ padding: "0 20px 28px", fontFamily: fraunces, fontSize: 20, fontWeight: 600, color: "#F4EDE4" }}>Foyer</div>
-        {[["Conversations", false], ["Pipeline", true], ["Calendar", false], ["Proposals", false]].map(([l, a]) => (
-          <div key={l as string} style={{ padding: "10px 20px", background: a ? "rgba(255,255,255,0.12)" : "transparent", borderLeft: a ? "3px solid #D97942" : "3px solid transparent" }}>
-            <span style={{ fontSize: 13, fontWeight: a ? 600 : 400, color: a ? "#F4EDE4" : "rgba(244,237,228,0.5)" }}>{l as string}</span>
-          </div>
-        ))}
-        <div style={{ marginTop: "auto", padding: "0 16px" }}>
-          <div style={{ background: "rgba(217,121,66,0.15)", border: "1px solid rgba(217,121,66,0.3)", borderRadius: 7, padding: "10px 12px" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#D97942", marginBottom: 4, letterSpacing: "0.05em" }}>CLEM</div>
-            <div style={{ fontSize: 11, color: "rgba(244,237,228,0.65)", lineHeight: 1.5 }}>3 enquiries need a reply today.</div>
-          </div>
-        </div>
-      </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#F4EDE4" }}>
-        <div style={{ padding: "18px 24px", borderBottom: "1px solid #E8DFD2", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <div>
-            <div style={{ fontFamily: fraunces, fontSize: 20, fontWeight: 600, color: "#1F1419" }}>Pipeline</div>
-            <div style={{ fontSize: 12, color: "#6B5C63", marginTop: 2 }}>Thursday, 1 May 2026</div>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div style={{ border: "1px solid #E8DFD2", borderRadius: 6, padding: "6px 14px", fontSize: 12, color: "#1F1419" }}>Filter</div>
-            <div style={{ background: "#D97942", borderRadius: 6, padding: "6px 16px", fontSize: 12, fontWeight: 600, color: "#fff" }}>+ Add lead</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 10, padding: "16px 20px", flex: 1, overflow: "hidden" }}>
-          {MINI_COLS.map(col => (
-            <div key={col.label} style={{ flex: 1, background: "#E8DFD2", borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10, flexShrink: 0 }}>
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: col.color, flexShrink: 0 }} />
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#1F1419", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{col.label}</div>
-                <div style={{ fontSize: 10, color: "#6B5C63", background: "#F4EDE4", borderRadius: 3, padding: "1px 5px", flexShrink: 0 }}>{col.cards.length}</div>
-              </div>
-              {col.cards.map((card, i) => (
-                <div key={i} style={{ background: "#fff", borderRadius: 7, padding: "10px 11px", marginBottom: 6, boxShadow: "0 1px 3px rgba(31,20,25,0.06)", flexShrink: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "#1F1419", flex: 1, paddingRight: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.name}</div>
-                    <span style={{ background: card.tagBg, color: card.tagC, borderRadius: 3, padding: "1px 5px", fontSize: 9, fontWeight: 600, flexShrink: 0, whiteSpace: "nowrap" }}>{card.tag}</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: "#6B5C63", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.sub}</div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <div style={{ fontSize: 10, color: "#6B5C63" }}>{card.date}</div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: "#1F1419" }}>{card.val}</div>
-                  </div>
-                </div>
-              ))}
-              <div style={{ border: "1.5px dashed rgba(107,92,99,0.22)", borderRadius: 7, height: 36, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 11, color: "rgba(107,92,99,0.38)" }}>+ Drop here</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── PEEKABOO ──────────────────────────────────────────────────────────────────
 function Peekaboo({ cw }: { cw: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const overlayRef   = useRef<HTMLDivElement>(null)
-  const animX = useRef(-999); const animY = useRef(-999)
-  const tX = useRef(-999);    const tY = useRef(-999)
-  const [touched, setTouched] = useState(false)
+  const bubbleRef    = useRef<HTMLDivElement>(null)
+  const ax = useRef(0); const ay = useRef(0)
+  const tx = useRef(0); const ty = useRef(0)
+  const [active, setActive] = useState(false)
+
+  const h   = Math.max(380, Math.round(cw * 0.45))
+  const bSz = Math.min(240, Math.max(160, Math.round(cw * 0.18)))
 
   useEffect(() => {
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t
     let raf: number
     const tick = () => {
-      animX.current = lerp(animX.current, tX.current, 0.13)
-      animY.current = lerp(animY.current, tY.current, 0.13)
-      if (overlayRef.current) {
-        const m = `radial-gradient(circle 230px at ${animX.current}px ${animY.current}px, transparent 0%, black 100%)`
-        overlayRef.current.style.webkitMaskImage = m
-        overlayRef.current.style.maskImage = m
+      ax.current = lerp(ax.current, tx.current, 0.09)
+      ay.current = lerp(ay.current, ty.current, 0.09)
+      if (bubbleRef.current) {
+        bubbleRef.current.style.transform =
+          `translate(calc(-50% + ${ax.current}px), calc(-50% + ${ay.current}px))`
       }
       raf = requestAnimationFrame(tick)
     }
@@ -322,32 +244,38 @@ function Peekaboo({ cw }: { cw: number }) {
   const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = containerRef.current?.getBoundingClientRect()
     if (!rect) return
-    tX.current = e.clientX - rect.left
-    tY.current = e.clientY - rect.top
-    if (!touched) setTouched(true)
-  }, [touched])
+    tx.current = e.clientX - rect.left - rect.width / 2
+    ty.current = e.clientY - rect.top  - rect.height / 2
+    if (!active) setActive(true)
+  }, [active])
 
-  const onLeave = useCallback(() => { tX.current = -999; tY.current = -999 }, [])
-
-  const h = Math.max(380, Math.round(cw * 0.45))
+  const onLeave = useCallback(() => { tx.current = 0; ty.current = 0 }, [])
 
   return (
-    <div ref={containerRef} style={{ position: "relative", height: h, overflow: "hidden", background: C.ink }}
-      onMouseMove={onMove} onMouseLeave={onLeave}>
-      <div style={{ position: "absolute", inset: 0 }}>
-        <MiniDashboard />
+    <div ref={containerRef}
+      style={{ position: "relative", height: h, overflow: "hidden", background: C.plum }}
+      onMouseMove={onMove} onMouseLeave={onLeave}
+    >
+      <div ref={bubbleRef} style={{
+        position: "absolute", top: "50%", left: "50%",
+        width: bSz, height: bSz, borderRadius: "50%",
+        overflow: "hidden", border: `3px solid ${C.cream}`,
+        boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+        transform: "translate(-50%, -50%)",
+        pointerEvents: "none", willChange: "transform",
+      }}>
+        <img src={TEXTURE_URL} alt="" aria-hidden
+          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
-      <div ref={overlayRef} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(18,13,9,0.96)", pointerEvents: "none" }} />
-      <div className={`peek-hint${touched ? " gone" : ""}`}
-        style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10, pointerEvents: "none" }}>
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" opacity={0.22}>
-          <circle cx="10" cy="10" r="9" stroke="#F4EDE4" strokeWidth="1.5" />
-          <circle cx="10" cy="10" r="3" fill="#F4EDE4" />
-        </svg>
-        <span style={{ fontFamily: geist, fontSize: 11, color: "rgba(244,237,228,0.22)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          Move your cursor to peek inside
-        </span>
-      </div>
+      <span className={`peek-hint${active ? " gone" : ""}`} style={{
+        position: "absolute", bottom: 28, left: "50%",
+        transform: "translateX(-50%)",
+        fontFamily: geist, fontSize: 11, color: P.dimmer,
+        letterSpacing: "0.1em", textTransform: "uppercase",
+        pointerEvents: "none", whiteSpace: "nowrap",
+      }}>
+        Move your cursor
+      </span>
     </div>
   )
 }
@@ -400,14 +328,10 @@ export default function FoyerLanding() {
         paddingLeft: px, paddingRight: px,
         paddingTop: mob ? 72 : 96, paddingBottom: mob ? 72 : 96,
         minHeight: "88vh", display: "flex", flexDirection: "column",
+        backgroundImage: `url(${TEXTURE_URL})`,
+        backgroundSize: "cover", backgroundPosition: "center",
+        backgroundColor: C.cream,
       }}>
-        {/* Texture overlay */}
-        <div aria-hidden style={{
-          position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none",
-          backgroundImage: `url(${TEXTURE_URL})`,
-          backgroundSize: "cover", backgroundPosition: "center",
-          opacity: 0.08,
-        }} />
 
         <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
 

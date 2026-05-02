@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Kanban, MessageSquare, FileText, Calendar } from "lucide-react"
+import { Kanban, MessageSquare, Calendar, Sparkles } from "lucide-react"
 
 // ── BRAND TOKENS ─────────────────────────────────────────────────────────────
 const C = {
@@ -94,8 +94,8 @@ const CSS = `
   }
 
   .foyer-nav--scrolled {
-    background: rgba(31,20,25,0.95) !important;
-    backdrop-filter: blur(12px) !important;
+    background: rgba(31,20,25,0.88) !important;
+    backdrop-filter: blur(16px) !important;
   }
 
   .faq-details + .faq-details {
@@ -261,7 +261,7 @@ function EmailForm({ stack, compact, dark }: { stack?: boolean; compact?: boolea
         className="btn-primary"
         style={{ background: C.clem, color: C.ink, border: "none", borderRadius: 4, padding: `${py}px 24px`, fontFamily: geist, fontSize: fs, fontWeight: 700, whiteSpace: "nowrap", width: stack ? "100%" : undefined }}
       >
-        Get early access
+        Save your spot
       </button>
     </form>
   )
@@ -375,8 +375,15 @@ export default function FoyerLanding() {
   const secPad = { paddingLeft: px, paddingRight: px, paddingTop: mob ? 64 : 96, paddingBottom: mob ? 64 : 96 }
 
   return (
-    <div ref={rootRef} className="foyer-root" style={{ fontFamily: geist, color: P.text, backgroundColor: C.ink, width: "100%", overflowX: "hidden" }}>
+    <div ref={rootRef} className="foyer-root" style={{ fontFamily: geist, color: P.text, width: "100%", overflowX: "hidden" }}>
       <style>{CSS}</style>
+      {/* Fixed texture backdrop */}
+      <div aria-hidden style={{
+        position: "fixed", inset: 0, zIndex: -1,
+        backgroundImage: "url('/brand/foyer-texture.png')",
+        backgroundSize: "cover", backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }} />
       <CustomCursor />
 
       {/* ── NAV ── */}
@@ -385,7 +392,6 @@ export default function FoyerLanding() {
           position: "sticky", top: 0, zIndex: 200,
           height: 56, display: "flex", alignItems: "center", justifyContent: "space-between",
           paddingLeft: px, paddingRight: px,
-          background: C.ink,
           borderBottom: `1px solid ${P.border}`,
           transition: "background 0.3s",
         }}>
@@ -408,7 +414,7 @@ export default function FoyerLanding() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="btn-primary" onClick={() => scrollTo("final-cta")}
             style={{ background: C.clem, color: C.ink, border: "none", borderRadius: 4, padding: "7px 18px", fontFamily: geist, fontSize: 13, fontWeight: 600 }}>
-            Get early access
+            Save your spot
           </button>
           {mob && (
             <button onClick={() => setMenuOpen(o => !o)}
@@ -426,14 +432,14 @@ export default function FoyerLanding() {
       {mob && menuOpen && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 500,
-          background: C.ink, display: "flex", flexDirection: "column",
+          background: "rgba(31,20,25,0.97)", backdropFilter: "blur(16px)", display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center", gap: 40,
         }}>
           <button onClick={() => setMenuOpen(false)}
             style={{ position: "absolute", top: 16, right: 24, background: "none", border: "none", color: P.text, fontSize: 24 }}>
             ✕
           </button>
-          {["How it works|how", "Pricing|pricing", "Get early access|final-cta"].map(item => {
+          {["How it works|how", "Pricing|pricing", "Save your spot|final-cta"].map(item => {
             const [label, id] = item.split("|")
             return (
               <button key={id} onClick={() => scrollTo(id)}
@@ -451,7 +457,6 @@ export default function FoyerLanding() {
         flexDirection: "column", textAlign: "center",
         paddingLeft: px, paddingRight: px,
         paddingTop: 80, paddingBottom: 80,
-        background: C.ink,
         position: "relative",
       }}>
         {/* Pulse ring container */}
@@ -490,34 +495,21 @@ export default function FoyerLanding() {
         <h1 style={{
           fontFamily: geist, fontWeight: 800,
           fontSize: `clamp(44px, 8vw, ${hSz}px)`,
-          letterSpacing: "-0.04em", lineHeight: 1.0,
+          letterSpacing: "-0.04em", lineHeight: 1.05,
           color: P.text, maxWidth: 800,
-          marginBottom: 20,
+          marginBottom: 40,
         }}>
-          Private events deserve<br />better software.
+          Your event enquiries.<br />Sorted.
         </h1>
-
-        <p style={{
-          fontFamily: geist, fontSize: mob ? 16 : 19,
-          color: P.dim, lineHeight: 1.65,
-          maxWidth: 500, marginBottom: 40,
-        }}>
-          Stop losing bookings to whoever replies first.
-        </p>
 
         <button className="btn-primary" onClick={() => scrollTo("final-cta")}
           style={{
             background: C.clem, color: C.ink, border: "none",
             borderRadius: 4, padding: "14px 32px",
             fontFamily: geist, fontSize: 16, fontWeight: 700,
-            marginBottom: 20,
           }}>
-          Get early access
+          Save your spot
         </button>
-
-        <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer }}>
-          Early access · London venues only · No credit card
-        </p>
       </section>
 
       {/* ── TICKER ── */}
@@ -531,7 +523,7 @@ export default function FoyerLanding() {
         <div className="ticker-track">
           {[0, 1].map(copy => (
             <span key={copy} style={{ display: "flex", alignItems: "center", gap: 0, whiteSpace: "nowrap" }}>
-              {["Restaurants", "Hotels", "Members clubs", "Private dining rooms", "Galleries", "Roof terraces", "Boutique hotels", "Event spaces", "London venues"].map((v, i) => (
+              {["Smart inbox", "Instant first response", "Pipeline management", "Gmail sync", "Google Calendar", "Private dining", "Members clubs", "Hotels", "Proposal tracking", "London-native", "Qualified enquiries", "Embeddable widget", "Event lifecycle", "Available 24/7"].map((v, i) => (
                 <span key={i}>
                   <span style={{ fontFamily: geist, fontSize: 12, fontWeight: 600, color: P.dimmer, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                     {v}
@@ -549,24 +541,24 @@ export default function FoyerLanding() {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHead
             eyebrow="The Problem"
-            headline={<>An enquiry came in at 8pm.<br />You were in service.</>}
+            headline="Private event enquiries are a mess."
             mob={mob} tab={tab}
           />
           <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(2, 1fr)", gap: mob ? 32 : 64, marginTop: mob ? 40 : 56 }}>
             <FadeUp delay={80}>
               <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.8 }}>
-                An enquiry comes in. You&apos;re mid-service. By the time you reply — an hour later, maybe the next morning — the booker has confirmed somewhere else. Not because your venue wasn&apos;t right. Because you weren&apos;t first.
+                Enquiries come in across email, WhatsApp, and phone. You copy-paste the same answers every day. Leads go cold while you&apos;re in service. Follow-ups fall through the cracks because no one wrote them down.
               </p>
               <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.8, marginTop: 20 }}>
-                This plays out hundreds of times a year across London&apos;s private dining rooms, hotel event spaces, and members clubs. Not a pipeline problem. A speed problem. One the whole industry shares.
+                The average venue manager spends more time managing their inbox than managing their events.
               </p>
             </FadeUp>
             <FadeUp delay={160}>
               <p style={{ fontFamily: geist, fontSize: bSz, color: P.text, lineHeight: 1.8 }}>
-                <strong style={{ color: P.text }}>Foyer&apos;s AI, Clem, reads every enquiry the moment it lands.</strong> Budget confirmed, headcount noted, event type matched — before you&apos;ve even opened the message. Clem drafts a reply in your voice. You review and send in one click. Or let Clem send automatically.
+                <strong style={{ color: P.text }}>Foyer replaces that by responding to the first emails you copy-paste answers to every day and automating everything that comes after you&apos;ve locked in a date.</strong>
               </p>
               <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.8, marginTop: 20 }}>
-                Venues using Foyer reply in under a minute. Even when they&apos;re in the middle of service.
+                Enquiries arrive confirmed, with budget and headcount already captured. Your pipeline shows every lead and what it needs. Nothing falls through the cracks.
               </p>
             </FadeUp>
           </div>
@@ -578,32 +570,45 @@ export default function FoyerLanding() {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHead
             eyebrow="The Product"
-            headline={<>Three things.<br />That&apos;s the whole product.</>}
+            headline="The smart inbox for private event enquiries."
             mob={mob} tab={tab}
           />
           <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3, 1fr)", gap: gap, marginTop: mob ? 40 : 56 }}>
             {[
               {
-                n: "01", title: "Reads the enquiry",
-                body: "Date, headcount, event type, budget range. Clem has it all before you've opened the message. You see a brief, not a wall of text from a stranger.",
+                n: "01",
+                title: "Every enquiry answered, before you read it.",
+                body: "Clem replies to every new enquiry within seconds to confirm budget, headcount, and availability. By the time you see an event, the conversation is already underway with all the details you need to deliver a great event.",
+                badge: null,
               },
               {
-                n: "02", title: "Drafts the reply",
-                body: "Personalised, in your voice, in under a minute. Not a template that makes you sound like a hotel chain. Written for this person, this booking, this date.",
+                n: "02",
+                title: "No more chasing threads across email, WhatsApp, and phone.",
+                body: "Every lead, its stage, and what needs to happen next, all in one view. New lead to confirmed booking, visible without opening a single inbox.",
+                badge: null,
               },
               {
-                n: "03", title: "Moves the pipeline",
-                body: "Knows who to chase and when. Every lead tracked, every follow-up timed — without the spreadsheet you'll stop updating by Tuesday.",
+                n: "03",
+                title: "Proposals, documents, and payments.",
+                body: "Send proposals, collect deposits, and share contracts from one place. Everything the booker needs to confirm is in one link.",
+                badge: "Coming soon",
               },
             ].map((item, i) => (
               <FadeUp key={item.n} delay={i * 80}>
                 <div className="dark-feat-card">
-                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, marginBottom: 18, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14 }}>
+                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, marginBottom: 18, letterSpacing: "0.06em" }}>
                     {item.n}
                   </div>
-                  <h3 style={{ fontFamily: geist, fontSize: 19, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", lineHeight: 1.3, marginBottom: 12 }}>
-                    {item.title}
-                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <h3 style={{ fontFamily: geist, fontSize: 17, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", lineHeight: 1.3, margin: 0 }}>
+                      {item.title}
+                    </h3>
+                    {item.badge && (
+                      <span style={{ flexShrink: 0, fontFamily: geist, fontSize: 10, fontWeight: 600, color: P.dimmer, border: `1px solid ${P.border}`, borderRadius: 999, padding: "2px 8px", letterSpacing: "0.04em" }}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontFamily: geist, fontSize: 14, color: P.dim, lineHeight: 1.75 }}>
                     {item.body}
                   </p>
@@ -619,7 +624,7 @@ export default function FoyerLanding() {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHead
             eyebrow="How It Works"
-            headline="Set up in an afternoon. Running by evening."
+            headline="Set up in an afternoon. Running by dinner service."
             mob={mob} tab={tab}
           />
           <div style={{ marginTop: mob ? 40 : 56, display: "flex", flexDirection: "column", gap: mob ? 48 : 64 }}>
@@ -628,10 +633,10 @@ export default function FoyerLanding() {
             <FadeUp delay={0}>
               <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: gap, alignItems: "start" }}>
                 <div>
-                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14, marginBottom: 14 }}>01</div>
-                  <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>Drop the snippet</h3>
+                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", marginBottom: 14 }}>01</div>
+                  <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>Paste it into your website.</h3>
                   <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.75 }}>
-                    One line of code on your website. Every enquiry from that page lands directly in Foyer.
+                    One line of code adds a Foyer enquiry form to any page on your site. Every submission lands in your pipeline as a structured lead, with budget, headcount, and event date already captured. No more vague &ldquo;do you do private hire?&rdquo; emails.
                   </p>
                 </div>
                 <div>
@@ -664,10 +669,10 @@ export default function FoyerLanding() {
             <FadeUp delay={0}>
               <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: gap, alignItems: "start" }}>
                 <div>
-                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14, marginBottom: 14 }}>02</div>
-                  <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>Clem reads it first</h3>
+                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", marginBottom: 14 }}>02</div>
+                  <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>Connect Gmail and Google Calendar.</h3>
                   <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.75 }}>
-                    Before you see the message, Clem has it qualified. Budget confirmed, headcount noted, event type matched. You get the brief, not the noise.
+                    Foyer threads into your existing inbox. Inbound enquiry emails sync automatically. Your availability calendar stays current so Clem always knows what dates are open, and never sends a proposal for a Saturday you&apos;ve already sold.
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: mob ? "flex-start" : "center" }}>
@@ -689,7 +694,7 @@ export default function FoyerLanding() {
                       </div>
                     </div>
                     <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer, letterSpacing: "0.04em" }}>
-                      The enquiry form, live on any site
+                      The widget, live on any site
                     </p>
                   </div>
                 </div>
@@ -699,10 +704,10 @@ export default function FoyerLanding() {
             {/* Step 03 */}
             <FadeUp delay={0}>
               <div>
-                <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14, marginBottom: 14 }}>03</div>
-                <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>You review and send</h3>
+                <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", marginBottom: 14 }}>03</div>
+                <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>More connections on the way.</h3>
                 <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.75, maxWidth: 500 }}>
-                  See Clem&apos;s draft, edit or approve, and send in one click. Every conversation threaded, every lead tracked.
+                  Stripe for deposit collection. OpenTable and SevenRooms for reservation sync. Foyer plugs into the tools London venues already rely on.
                 </p>
               </div>
             </FadeUp>
@@ -732,7 +737,7 @@ export default function FoyerLanding() {
                   borderRadius: 4, border: `1px solid ${P.border}`,
                   display: "flex", alignItems: "center", paddingLeft: 10,
                 }}>
-                  <span style={{ fontFamily: mono, fontSize: 11, color: P.dimmer }}>app.findfoyer.com</span>
+                  <span style={{ fontFamily: mono, fontSize: 11, color: P.dimmer }}>yoursite.com</span>
                 </div>
               </div>
 
@@ -782,7 +787,7 @@ export default function FoyerLanding() {
                     maxWidth: 200,
                   }}>
                     <p style={{ fontFamily: geist, fontSize: 11, color: P.text, margin: 0, lineHeight: 1.5 }}>
-                      Clem replied to 3 enquiries while you were away
+                      &ldquo;Do you have availability for 60 on May 22nd?&rdquo;
                     </p>
                   </div>
                   <div style={{
@@ -804,15 +809,15 @@ export default function FoyerLanding() {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHead
             eyebrow="The Dashboard"
-            headline="Everything in one place."
+            headline="Everything in one place. Nothing in your inbox."
             mob={mob} tab={tab}
           />
           <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(2, 1fr)", gap: gap, marginTop: mob ? 40 : 56 }}>
             {[
-              { Icon: Kanban, title: "Pipeline", body: "Every lead through every stage. New, Qualified, Proposal Sent, Confirmed. Nothing slips." },
-              { Icon: MessageSquare, title: "AI-suggested replies", body: "Clem drafts the response. Review and send in one click. Or let Clem send automatically — your call." },
-              { Icon: FileText, title: "Proposals", body: "Structured, comparable, out in minutes. Not a PDF attachment from 2019." },
-              { Icon: Calendar, title: "Calendar sync", body: "Your availability, always current. No double-bookings, no back-and-forth on dates that are already gone." },
+              { Icon: Kanban, title: "Kanban pipeline", body: "Visual stages from new lead to confirmed event. See what's in negotiation, what's waiting on a proposal, and what's locked in for Saturday." },
+              { Icon: Calendar, title: "Availability calendar", body: "Block dates directly in Foyer. Clem checks your calendar before responding to every enquiry, so you never field a question for a date you can't do." },
+              { Icon: MessageSquare, title: "Conversation threads", body: "Every message, from every channel, in one thread per event. No more digging through three inboxes to find who said what." },
+              { Icon: Sparkles, title: "AI-suggested replies", body: "When Clem flags something for your attention, a suggested response is already drafted. Send it, edit it, or write your own." },
             ].map((item, i) => (
               <FadeUp key={item.title} delay={i * 60}>
                 <div className="dark-feat-card" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
@@ -839,25 +844,25 @@ export default function FoyerLanding() {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHead
             eyebrow="Pricing"
-            headline="Simple, London-first pricing."
+            headline="Simple pricing for venues of any size."
             mob={mob} tab={tab}
           />
           <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3, 1fr)", gap: gap, marginTop: mob ? 40 : 56, alignItems: "start" }}>
             {[
               {
-                name: "Early Access", price: "£0", per: "/mo", featured: false,
-                features: ["50 enquiries/month", "1 inbox", "Clem AI replies"],
-                cta: "Join waitlist", muted: true,
+                name: "Starter", price: "£0", per: "/mo", desc: "Up to 50 enquiries per month", featured: false, popular: false,
+                features: ["Clem auto-replies", "Pipeline management", "Embeddable enquiry form", "Gmail sync"],
+                cta: "Save your spot", muted: true,
               },
               {
-                name: "Growth", price: "£49", per: "/mo", featured: true, popular: true,
-                features: ["200 enquiries/month", "Gmail integration", "Full pipeline", "Proposals"],
-                cta: "Get early access", muted: false,
+                name: "Pro", price: "£79", per: "/mo", desc: "Unlimited enquiries", featured: true, popular: true,
+                features: ["Everything in Starter", "Google Calendar sync", "Proposal tracking", "AI-suggested replies", "Priority support"],
+                cta: "Save your spot", muted: false,
               },
               {
-                name: "Scale", price: "£149", per: "/mo", featured: false,
-                features: ["Unlimited enquiries", "Multiple inboxes", "Custom AI voice", "Dedicated setup"],
-                cta: "Join waitlist", muted: true,
+                name: "Teams", price: "£199", per: "/mo", desc: "Multiple venues, one dashboard", featured: false, popular: false,
+                features: ["Everything in Pro", "Multiple venue profiles", "Team access", "Custom onboarding"],
+                cta: "Save your spot", muted: true,
               },
             ].map((plan, i) => (
               <FadeUp key={plan.name} delay={i * 80}>
@@ -873,10 +878,11 @@ export default function FoyerLanding() {
                       fontFamily: geist, fontSize: 11, fontWeight: 700,
                       borderRadius: 999, padding: "3px 12px", whiteSpace: "nowrap",
                     }}>
-                      ★ Most popular
+                      ★ Most Popular
                     </div>
                   )}
-                  <div style={{ fontFamily: geist, fontSize: 13, fontWeight: 600, color: P.dim, marginBottom: 12 }}>{plan.name}</div>
+                  <div style={{ fontFamily: geist, fontSize: 13, fontWeight: 600, color: P.dim, marginBottom: 4 }}>{plan.name}</div>
+                  <div style={{ fontFamily: geist, fontSize: 12, color: P.dimmer, marginBottom: 16 }}>{plan.desc}</div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 20 }}>
                     <span style={{ fontFamily: geist, fontSize: 36, fontWeight: 800, color: P.text, letterSpacing: "-0.03em" }}>{plan.price}</span>
                     <span style={{ fontFamily: geist, fontSize: 13, color: P.dimmer }}>{plan.per}</span>
@@ -904,7 +910,7 @@ export default function FoyerLanding() {
           </div>
           <FadeUp delay={100}>
             <p style={{ fontFamily: geist, fontSize: 13, color: P.dimmer, marginTop: 24, textAlign: "center" }}>
-              Add-on: additional inboxes £15/mo each. All plans include unlimited venues.
+              Stripe and OpenTable/SevenRooms sync available as add-ons at launch.
             </p>
           </FadeUp>
         </div>
@@ -915,17 +921,17 @@ export default function FoyerLanding() {
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <SectionHead
             eyebrow="FAQ"
-            headline="Straight answers."
-            lede="Things venue managers ask before signing up."
+            headline="Questions."
+            lede="Everything you need before you get started."
             mob={mob} tab={tab}
           />
           <div style={{ marginTop: mob ? 40 : 56, borderTop: `1px solid ${P.border}` }}>
             {[
-              { q: "How does Clem know my venue?", a: "You give Clem your menus, capacity, pricing, and availability. They learn the rest from every enquiry they handle." },
-              { q: "Does this replace my email inbox?", a: "No. Enquiries still land in your email. Foyer runs alongside it — Clem just handles them before you've had a chance to open them." },
-              { q: "What kind of venues can use Foyer?", a: "Any space taking private events for 20–150 guests. Restaurants with private dining rooms, hotels, members clubs, galleries, and private hire spaces." },
-              { q: "Is Foyer only for London?", a: "For now. We're starting in London and expanding in late 2026." },
-              { q: "How much does it actually cost?", a: "Free during early access. Paid plans from £49/month launch later this year. No credit card to join the waitlist." },
+              { q: "Does Clem work with my existing email setup?", a: "Yes. Foyer connects to Gmail and reads enquiries from your inbox. Clem responds from your existing address, so bookers see a reply from you, not from a third-party system." },
+              { q: "What happens when Clem can't answer something?", a: "Clem flags it for you with context and, where possible, a suggested reply. You respond directly from the conversation thread in Foyer. Nothing gets lost." },
+              { q: "Do I need to list on the Foyer marketplace to use the inbox?", a: "No. Foyer works as a standalone inbox for your existing enquiries. If you want to attract new bookers through the Foyer marketplace, you can list your space separately. Neither side requires the other." },
+              { q: "How long does setup take?", a: "Under an afternoon. Paste the embed snippet into your website, connect Gmail and Calendar, and Clem is live. Most venues are running before end of day." },
+              { q: "Is this only for restaurants?", a: "No. Foyer works for any venue hosting private events: restaurants, hotels, members clubs, gallery spaces, and studios. If you take private bookings, Foyer handles the enquiry side." },
             ].map((item, i) => (
               <FadeUp key={i} delay={i * 40}>
                 <details className="faq-details">
@@ -950,17 +956,14 @@ export default function FoyerLanding() {
           <FadeUp>
             <Eyebrow>[ Get Started ]</Eyebrow>
             <h2 style={{ fontFamily: geist, fontSize: mob ? 32 : 48, fontWeight: 800, color: P.text, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 20 }}>
-              Stop losing bookings{mob ? " " : <br />}to whoever replies first.
+              The enquiry came in at 8pm.<br />By 8:15, Clem had it handled.
             </h2>
             <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.7, marginBottom: 36 }}>
-              Join the waitlist and be in the first group of London venues to use Foyer.
+              Join venues across London who&apos;ve handed the inbox to Clem.
             </p>
-            <div style={{ maxWidth: 460, margin: "0 auto 20px" }}>
+            <div style={{ maxWidth: 460, margin: "0 auto" }}>
               <EmailForm stack={mob} dark />
             </div>
-            <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer }}>
-              Early access · London venues only · No credit card
-            </p>
           </FadeUp>
         </div>
       </section>
@@ -975,10 +978,10 @@ export default function FoyerLanding() {
                 <span style={{ fontFamily: fraunces, fontSize: 18, fontWeight: 500, color: P.text, letterSpacing: "-0.01em" }}>foyer</span>
               </div>
               <p style={{ fontFamily: geist, fontSize: 14, color: P.dim, lineHeight: 1.65, maxWidth: 280, marginBottom: 12 }}>
-                The private events platform for London venues.
+                The smart inbox for private event enquiries.
               </p>
-              <a href="mailto:kha-ai@findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 13, color: P.dimmer, textDecoration: "none" }}>
-                kha-ai@findfoyer.com
+              <a href="mailto:hello@findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 13, color: P.dimmer, textDecoration: "none" }}>
+                hello@findfoyer.com
               </a>
             </div>
             <div>
@@ -996,10 +999,10 @@ export default function FoyerLanding() {
               <div style={{ fontFamily: geist, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: P.dimmer, marginBottom: 16 }}>Connect</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <a href="https://findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 14, color: P.dim, textDecoration: "none" }}>App</a>
-                <a href="mailto:kha-ai@findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 14, color: P.dim, textDecoration: "none" }}>Email us</a>
+                <a href="mailto:hello@findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 14, color: P.dim, textDecoration: "none" }}>Email</a>
                 <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="a-link"
                   style={{ background: "none", border: "none", textAlign: "left", fontFamily: geist, fontSize: 14, color: P.dim }}>
-                  Back to top
+                  Top
                 </button>
               </div>
             </div>
@@ -1025,7 +1028,7 @@ export default function FoyerLanding() {
             fontFamily: geist, fontSize: 14, fontWeight: 700,
             boxShadow: "0 8px 32px rgba(217,121,66,0.25)",
           }}>
-          Get early access →
+          Save your spot →
         </button>
       </div>
 

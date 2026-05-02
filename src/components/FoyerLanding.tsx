@@ -395,7 +395,10 @@ export default function FoyerLanding() {
           borderBottom: `1px solid ${P.border}`,
           transition: "background 0.3s",
         }}>
-        <img src="/brand/foyer-logo.svg" alt="foyer" style={{ height: 26 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <FoyerMark size={24} color={C.clem} />
+          <span style={{ fontFamily: fraunces, fontSize: 17, fontWeight: 500, color: P.text, letterSpacing: "-0.01em" }}>foyer</span>
+        </div>
 
         {/* Desktop links */}
         {!mob && (

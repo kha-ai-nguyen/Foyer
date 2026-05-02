@@ -1,0 +1,19 @@
+<svg width="210" height="215" viewBox="-5 -10 210 215" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="95" fill="url(#outerGlowC)"/>
+  <path d="M100 20C130 20 160 35 170 55C180 75 180 90 175 105C170 120 160 135 145 145C130 155 115 160 100 160C85 160 70 155 55 145C40 135 30 120 25 105C20 90 20 75 30 55C40 35 70 20 100 20Z" fill="url(#clementineGradientC)"/>
+  <path d="M96.5 22 Q74 -8 53 -2 Q74 28 96.5 22Z" fill="#7A8A6F"/>
+  <path d="M103.5 23 Q126 -7 147 -1 Q126 29 103.5 23Z" fill="#7A8A6F"/>
+  <path d="M100 30 Q101 18 99 10" stroke="#5C6B52" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <text x="100" y="90" text-anchor="middle" dominant-baseline="central" fill="#FFFFFF" fill-opacity="0.95" font-size="80" font-family="'Fraunces', serif" font-style="italic" font-weight="700">C</text>
+  <defs>
+    <radialGradient id="outerGlowC" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F4EDE4" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#F4EDE4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="clementineGradientC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5AC6E"/>
+      <stop offset="50%" stop-color="#D97942"/>
+      <stop offset="100%" stop-color="#B85E30"/>
+    </linearGradient>
+  </defs>
+</svg>

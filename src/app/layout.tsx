@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Foyer — Private Events, Handled.",
   description: "Foyer's AI reads every private dining and event enquiry, qualifies the lead, and drafts a personalised reply in your voice — in under a minute.",
   icons: {
-    icon: "/brand/foyer-favicon.svg",
+    icon: "/brand/foyer-favicon.png",
     apple: "/brand/foyer-favicon.png",
   },
 };

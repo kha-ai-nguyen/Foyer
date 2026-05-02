@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import { Kanban, MessageSquare, FileText, Calendar } from "lucide-react"
 
 // ── BRAND TOKENS ─────────────────────────────────────────────────────────────
 const C = {
@@ -18,35 +19,50 @@ const C = {
 
 // Light text tokens (dark surfaces)
 const P = {
-  text:   "#F4EDE4",
-  dim:    "rgba(244,237,228,0.65)",
-  dimmer: "rgba(244,237,228,0.38)",
-  border: "rgba(244,237,228,0.08)",
+  text:        "#F4EDE4",
+  dim:         "rgba(244,237,228,0.60)",
+  dimmer:      "rgba(244,237,228,0.38)",
+  border:      "rgba(244,237,228,0.08)",
+  borderBright:"rgba(244,237,228,0.25)",
 }
 
 const fraunces = `'Fraunces', Georgia, serif`
 const geist    = `'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
+const mono     = `'Geist Mono', 'Fira Mono', monospace`
 
-// Texture loaded from public/brand/ — served by Next.js / Vercel
-const TEXTURE_URL = "/brand/foyer-texture.webp"
+const WIDGET_SNIPPET = `<script src="https://findfoyer.com/widget.js"
+  data-venue="YOUR_VENUE_ID"></script>`
+
+const CHIPS = [
+  "Clem replied to 3 enquiries",
+  "New lead: 40 guests, private dining",
+  "Proposal sent · The Ivy Private Room",
+]
 
 // ── CSS ───────────────────────────────────────────────────────────────────────
-// Fonts are loaded in globals.css — only component-specific styles here
 const CSS = `
   .foyer-root { cursor: none; }
   .foyer-root a, .foyer-root button, .foyer-root input { cursor: none; }
 
+  @keyframes ring-pulse {
+    0%   { transform: scale(1);   opacity: 0.45; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+
+  @keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .ticker-track {
+    display: flex;
+    animation: ticker-scroll 30s linear infinite;
+    width: max-content;
+  }
+  .ticker-track:hover { animation-play-state: paused; }
+
   @keyframes shimmer {
     0%   { background-position: 200% center; }
     100% { background-position: -200% center; }
-  }
-  .shimmer-text {
-    background: linear-gradient(90deg, #D97942 0%, #C06B38 30%, #4A1F3F 50%, #C06B38 70%, #D97942 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: shimmer 4s linear infinite;
   }
 
   .fade-up {
@@ -66,20 +82,49 @@ const CSS = `
   .a-link { transition: opacity 0.15s; }
   .a-link:hover { opacity: 0.7; }
 
-  .feat-card {
+  .dark-feat-card {
     transition: border-color 0.2s, background 0.2s;
-    border: 1px solid transparent;
-    border-radius: 8px;
+    border: 1px solid rgba(244,237,228,0.08);
+    border-radius: 4px;
     padding: 24px;
-    margin: -24px;
   }
-  .feat-card:hover {
-    border-color: rgba(217,121,66,0.25);
-    background: rgba(217,121,66,0.05);
+  .dark-feat-card:hover {
+    border-color: rgba(244,237,228,0.18);
+    background: rgba(244,237,228,0.04);
   }
 
-  .peek-hint { opacity: 1; transition: opacity 0.5s ease; }
-  .peek-hint.gone { opacity: 0; }
+  .foyer-nav--scrolled {
+    background: rgba(31,20,25,0.95) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+
+  .faq-details + .faq-details {
+    border-top: 1px solid rgba(244,237,228,0.08);
+  }
+  .faq-summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    cursor: none;
+  }
+  .faq-summary::-webkit-details-marker { display: none; }
+  .faq-summary::after {
+    content: "+";
+    font-size: 20px;
+    font-family: system-ui, sans-serif;
+    color: rgba(244,237,228,0.38);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 16px;
+    line-height: 1;
+  }
+  details[open] .faq-summary::after { transform: rotate(45deg); }
+
+  .chip-fade {
+    transition: opacity 0.4s ease;
+  }
 `
 
 // ── RESIZE OBSERVER ───────────────────────────────────────────────────────────
@@ -97,8 +142,6 @@ function useContainerWidth(ref: React.RefObject<HTMLDivElement | null>): number 
 }
 
 // ── CUSTOM CURSOR ─────────────────────────────────────────────────────────────
-// Bypasses React state entirely — direct DOM writes on every mousemove are
-// far cheaper than triggering a React re-render at 60+ fps.
 function CustomCursor() {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -218,81 +261,57 @@ function EmailForm({ stack, compact, dark }: { stack?: boolean; compact?: boolea
         className="btn-primary"
         style={{ background: C.clem, color: C.ink, border: "none", borderRadius: 4, padding: `${py}px 24px`, fontFamily: geist, fontSize: fs, fontWeight: 700, whiteSpace: "nowrap", width: stack ? "100%" : undefined }}
       >
-        Join waitlist
+        Get early access
       </button>
     </form>
   )
 }
 
-// ── PEEKABOO ──────────────────────────────────────────────────────────────────
-function Peekaboo({ cw }: { cw: number }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const bubbleRef    = useRef<HTMLDivElement>(null)
-  const ax = useRef(0); const ay = useRef(0)
-  const tx = useRef(0); const ty = useRef(0)
-  const [active, setActive] = useState(false)
-
-  const h   = Math.max(380, Math.round(cw * 0.45))
-  const bSz = Math.min(240, Math.max(160, Math.round(cw * 0.18)))
-
-  useEffect(() => {
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-    let raf: number
-    const tick = () => {
-      ax.current = lerp(ax.current, tx.current, 0.09)
-      ay.current = lerp(ay.current, ty.current, 0.09)
-      if (bubbleRef.current) {
-        bubbleRef.current.style.transform =
-          `translate(calc(-50% + ${ax.current}px), calc(-50% + ${ay.current}px))`
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [])
-
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
-    tx.current = e.clientX - rect.left - rect.width / 2
-    ty.current = e.clientY - rect.top  - rect.height / 2
-    if (!active) setActive(true)
-  }, [active])
-
-  const onLeave = useCallback(() => { tx.current = 0; ty.current = 0 }, [])
-
+// ── SKELETON ──────────────────────────────────────────────────────────────────
+function Skel({ w, h, r = 4 }: { w: string; h: number; r?: number }) {
   return (
-    <div ref={containerRef}
-      style={{ position: "relative", height: h, overflow: "hidden", background: C.ink }}
-      onMouseMove={onMove} onMouseLeave={onLeave}
-    >
-      <div ref={bubbleRef} style={{
-        position: "absolute", top: "50%", left: "50%",
-        width: bSz, height: bSz, borderRadius: "50%",
-        overflow: "hidden", border: `3px solid ${C.cream}`,
-        boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
-        transform: "translate(-50%, -50%)",
-        pointerEvents: "none", willChange: "transform",
-      }}>
-        <img src={TEXTURE_URL} alt="" aria-hidden
-          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      </div>
-      <span className={`peek-hint${active ? " gone" : ""}`} style={{
-        position: "absolute", bottom: 28, left: "50%",
-        transform: "translateX(-50%)",
-        fontFamily: geist, fontSize: 11, color: P.dimmer,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        pointerEvents: "none", whiteSpace: "nowrap",
-      }}>
-        Move your cursor
-      </span>
+    <div style={{ width: w, height: h, borderRadius: r, background: "rgba(244,237,228,0.08)", marginBottom: 8, flexShrink: 0 }} />
+  )
+}
+
+// ── EYEBROW ───────────────────────────────────────────────────────────────────
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontFamily: geist, fontSize: 11, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: P.dimmer, marginBottom: 16 }}>
+      {children}
     </div>
+  )
+}
+
+// ── SECTION HEADING ───────────────────────────────────────────────────────────
+function SectionHead({ eyebrow, headline, lede, mob, tab }: {
+  eyebrow: string
+  headline: React.ReactNode
+  lede?: React.ReactNode
+  mob: boolean
+  tab: boolean
+}) {
+  const h2Sz = mob ? 28 : tab ? 36 : 44
+  return (
+    <FadeUp>
+      <Eyebrow>[ {eyebrow} ]</Eyebrow>
+      <h2 style={{ fontFamily: geist, fontSize: h2Sz, fontWeight: 700, color: P.text, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: lede ? 16 : 0 }}>
+        {headline}
+      </h2>
+      {lede && (
+        <p style={{ fontFamily: geist, fontSize: 16, color: P.dim, lineHeight: 1.7, maxWidth: 560, marginTop: 16 }}>
+          {lede}
+        </p>
+      )}
+    </FadeUp>
   )
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function FoyerLanding() {
-  const rootRef = useRef<HTMLDivElement>(null)
+  const rootRef  = useRef<HTMLDivElement>(null)
+  const heroRef  = useRef<HTMLElement>(null)
+  const navRef   = useRef<HTMLElement>(null)
   const cw = useContainerWidth(rootRef)
 
   const mob = cw < 640
@@ -300,185 +319,715 @@ export default function FoyerLanding() {
   const sm  = mob || tab
 
   const px   = mob ? 24 : tab ? 48 : 80
-  const hSz  = mob ? 40 : tab ? 60 : 88
-  const h2Sz = mob ? 26 : tab ? 34 : 44
+  const hSz  = mob ? 44 : tab ? 68 : 96
   const bSz  = mob ? 15 : 17
-  const cols = mob ? "1fr" : "repeat(3, 1fr)"
   const gap  = mob ? 24 : tab ? 32 : 48
 
-  const divider = <hr style={{ border: "none", borderTop: `1px solid ${C.border}`, margin: 0 }} />
+  const [chipIdx,      setChipIdx]      = useState(0)
+  const [chipVisible,  setChipVisible]  = useState(true)
+  const [navDark,      setNavDark]      = useState(false)
+  const [menuOpen,     setMenuOpen]     = useState(false)
+  const [copied,       setCopied]       = useState(false)
+  const [floatVisible, setFloatVisible] = useState(false)
+
+  // Chip cycling
+  useEffect(() => {
+    const id = setInterval(() => {
+      setChipVisible(false)
+      setTimeout(() => {
+        setChipIdx(i => (i + 1) % CHIPS.length)
+        setChipVisible(true)
+      }, 400)
+    }, 3000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Nav darkens on scroll
+  useEffect(() => {
+    const onScroll = () => setNavDark(window.scrollY > 80)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  // Float pill appears when hero leaves viewport
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => {
+      setFloatVisible(!entry.isIntersecting)
+    }, { threshold: 0 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+    setMenuOpen(false)
+  }, [])
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(WIDGET_SNIPPET).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [])
+
+  const secPad = { paddingLeft: px, paddingRight: px, paddingTop: mob ? 64 : 96, paddingBottom: mob ? 64 : 96 }
 
   return (
-    <div ref={rootRef} className="foyer-root" style={{ fontFamily: geist, color: C.ink, backgroundColor: C.cream, width: "100%", overflowX: "hidden" }}>
+    <div ref={rootRef} className="foyer-root" style={{ fontFamily: geist, color: P.text, backgroundColor: C.ink, width: "100%", overflowX: "hidden" }}>
       <style>{CSS}</style>
       <CustomCursor />
 
       {/* ── NAV ── */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 100,
-        height: 56, display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingLeft: px, paddingRight: px,
-        background: C.ink,
-        borderBottom: `1px solid ${P.border}`,
-      }}>
+      <nav ref={navRef} className={navDark ? "foyer-nav--scrolled" : ""}
+        style={{
+          position: "sticky", top: 0, zIndex: 200,
+          height: 56, display: "flex", alignItems: "center", justifyContent: "space-between",
+          paddingLeft: px, paddingRight: px,
+          background: C.ink,
+          borderBottom: `1px solid ${P.border}`,
+          transition: "background 0.3s",
+        }}>
         <img src="/brand/foyer-logo.svg" alt="foyer" style={{ height: 26 }} />
-        <button className="btn-primary"
-          onClick={() => document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" })}
-          style={{ background: C.clem, color: C.ink, border: "none", borderRadius: 4, padding: "7px 18px", fontFamily: geist, fontSize: 13, fontWeight: 600, cursor: "none" }}>
-          Join waitlist
-        </button>
+
+        {/* Desktop links */}
+        {!mob && (
+          <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+            <button onClick={() => scrollTo("how")} className="a-link"
+              style={{ background: "none", border: "none", fontFamily: geist, fontSize: 14, color: P.dim, fontWeight: 500 }}>
+              How it works
+            </button>
+            <button onClick={() => scrollTo("pricing")} className="a-link"
+              style={{ background: "none", border: "none", fontFamily: geist, fontSize: 14, color: P.dim, fontWeight: 500 }}>
+              Pricing
+            </button>
+          </div>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button className="btn-primary" onClick={() => scrollTo("final-cta")}
+            style={{ background: C.clem, color: C.ink, border: "none", borderRadius: 4, padding: "7px 18px", fontFamily: geist, fontSize: 13, fontWeight: 600 }}>
+            Get early access
+          </button>
+          {mob && (
+            <button onClick={() => setMenuOpen(o => !o)}
+              style={{ background: "none", border: "none", display: "flex", flexDirection: "column", gap: 5, padding: 4 }}
+              aria-label="Menu">
+              {[0,1,2].map(i => (
+                <span key={i} style={{ display: "block", width: 22, height: 1.5, background: P.text, borderRadius: 1 }} />
+              ))}
+            </button>
+          )}
+        </div>
       </nav>
 
-      {/* ── SECTION 1: HERO ── */}
-      <section style={{
-        position: "relative",
+      {/* Mobile menu overlay */}
+      {mob && menuOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 500,
+          background: C.ink, display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 40,
+        }}>
+          <button onClick={() => setMenuOpen(false)}
+            style={{ position: "absolute", top: 16, right: 24, background: "none", border: "none", color: P.text, fontSize: 24 }}>
+            ✕
+          </button>
+          {["How it works|how", "Pricing|pricing", "Get early access|final-cta"].map(item => {
+            const [label, id] = item.split("|")
+            return (
+              <button key={id} onClick={() => scrollTo(id)}
+                style={{ background: "none", border: "none", fontFamily: geist, fontSize: 22, fontWeight: 600, color: P.text }}>
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── HERO ── */}
+      <section ref={heroRef} style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", textAlign: "center",
         paddingLeft: px, paddingRight: px,
-        paddingTop: mob ? 72 : 96, paddingBottom: mob ? 72 : 96,
-        minHeight: "88vh", display: "flex", flexDirection: "column",
-        backgroundImage: `url(${TEXTURE_URL})`,
-        backgroundSize: "cover", backgroundPosition: "center",
-        backgroundColor: C.cream,
+        paddingTop: 80, paddingBottom: 80,
+        background: C.ink,
+        position: "relative",
       }}>
-
-        <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-
-          {/* Venue type chips */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: mob ? "6px 10px" : "6px 14px", marginBottom: 36 }}>
-            {["Restaurants", "Hotels", "Members clubs", "Private hire spaces", "Galleries", "Roof terraces"].map(v => (
-              <span key={v} style={{ fontFamily: geist, fontSize: mob ? 11 : 12, color: C.dimmer, letterSpacing: "0.03em", border: `1px solid ${C.border}`, borderRadius: 20, padding: "3px 10px" }}>{v}</span>
-            ))}
-            <span style={{ fontFamily: geist, fontSize: mob ? 11 : 12, color: C.clem, letterSpacing: "0.03em", border: "1px solid rgba(217,121,66,0.35)", borderRadius: 20, padding: "3px 10px" }}>London</span>
+        {/* Pulse ring container */}
+        <div style={{ position: "relative", width: 160, height: 160, marginBottom: 40 }}>
+          {[0, 0.8, 1.6].map((delay, i) => (
+            <span key={i} style={{
+              position: "absolute", inset: 0,
+              borderRadius: "50%",
+              border: `1px solid rgba(217,121,66,${0.4 - i * 0.12})`,
+              animation: `ring-pulse 2.4s ease-out ${delay}s infinite`,
+              pointerEvents: "none",
+            }} />
+          ))}
+          <div style={{
+            position: "absolute", inset: 0,
+            borderRadius: "50%",
+            border: "1px solid rgba(244,237,228,0.10)",
+            background: "rgba(217,121,66,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <FoyerMark size={72} color={C.clem} />
           </div>
+        </div>
 
-          <h1 style={{ fontFamily: geist, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.0, fontSize: hSz, color: C.ink, marginBottom: 0, maxWidth: 820 }}>
-            Stop losing bookings<br />
-            <span className="shimmer-text">to whoever replies first.</span>
-          </h1>
+        {/* Status chip */}
+        <div className="chip-fade" style={{
+          opacity: chipVisible ? 1 : 0,
+          fontFamily: geist, fontSize: 13, color: P.dim,
+          border: `1px solid ${P.border}`,
+          borderRadius: 999, padding: "5px 14px",
+          marginBottom: 28,
+        }}>
+          {CHIPS[chipIdx]}
+        </div>
 
-          <p style={{ fontFamily: geist, fontSize: bSz, color: C.dim, lineHeight: 1.7, maxWidth: 520, marginTop: 28, marginBottom: 40 }}>
-            Foyer&apos;s AI reads every private dining and event enquiry, qualifies the lead, and drafts a personalised reply in your voice — in under a minute. For restaurants, hotels, members clubs, and every venue taking private events in London.
-          </p>
+        <h1 style={{
+          fontFamily: geist, fontWeight: 800,
+          fontSize: `clamp(44px, 8vw, ${hSz}px)`,
+          letterSpacing: "-0.04em", lineHeight: 1.0,
+          color: P.text, maxWidth: 800,
+          marginBottom: 20,
+        }}>
+          Private events deserve<br />better software.
+        </h1>
 
-          <div style={{ maxWidth: mob ? "100%" : 460, marginBottom: 16 }}>
-            <EmailForm stack={mob} />
+        <p style={{
+          fontFamily: geist, fontSize: mob ? 16 : 19,
+          color: P.dim, lineHeight: 1.65,
+          maxWidth: 500, marginBottom: 40,
+        }}>
+          Stop losing bookings to whoever replies first.
+        </p>
+
+        <button className="btn-primary" onClick={() => scrollTo("final-cta")}
+          style={{
+            background: C.clem, color: C.ink, border: "none",
+            borderRadius: 4, padding: "14px 32px",
+            fontFamily: geist, fontSize: 16, fontWeight: 700,
+            marginBottom: 20,
+          }}>
+          Get early access
+        </button>
+
+        <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer }}>
+          Early access · London venues only · No credit card
+        </p>
+      </section>
+
+      {/* ── TICKER ── */}
+      <div style={{
+        borderTop: `1px solid ${P.border}`,
+        borderBottom: `1px solid ${P.border}`,
+        paddingTop: 14, paddingBottom: 14,
+        overflow: "hidden",
+        background: "rgba(244,237,228,0.02)",
+      }}>
+        <div className="ticker-track">
+          {[0, 1].map(copy => (
+            <span key={copy} style={{ display: "flex", alignItems: "center", gap: 0, whiteSpace: "nowrap" }}>
+              {["Restaurants", "Hotels", "Members clubs", "Private dining rooms", "Galleries", "Roof terraces", "Boutique hotels", "Event spaces", "London venues"].map((v, i) => (
+                <span key={i}>
+                  <span style={{ fontFamily: geist, fontSize: 12, fontWeight: 600, color: P.dimmer, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    {v}
+                  </span>
+                  <span style={{ color: P.border, margin: "0 20px", fontSize: 12 }}>·</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PROBLEM ── */}
+      <section id="problem" style={secPad}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <SectionHead
+            eyebrow="The Problem"
+            headline={<>An enquiry came in at 8pm.<br />You were in service.</>}
+            mob={mob} tab={tab}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(2, 1fr)", gap: mob ? 32 : 64, marginTop: mob ? 40 : 56 }}>
+            <FadeUp delay={80}>
+              <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.8 }}>
+                An enquiry comes in. You&apos;re mid-service. By the time you reply — an hour later, maybe the next morning — the booker has confirmed somewhere else. Not because your venue wasn&apos;t right. Because you weren&apos;t first.
+              </p>
+              <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.8, marginTop: 20 }}>
+                This plays out hundreds of times a year across London&apos;s private dining rooms, hotel event spaces, and members clubs. Not a pipeline problem. A speed problem. One the whole industry shares.
+              </p>
+            </FadeUp>
+            <FadeUp delay={160}>
+              <p style={{ fontFamily: geist, fontSize: bSz, color: P.text, lineHeight: 1.8 }}>
+                <strong style={{ color: P.text }}>Foyer&apos;s AI, Clem, reads every enquiry the moment it lands.</strong> Budget confirmed, headcount noted, event type matched — before you&apos;ve even opened the message. Clem drafts a reply in your voice. You review and send in one click. Or let Clem send automatically.
+              </p>
+              <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.8, marginTop: 20 }}>
+                Venues using Foyer reply in under a minute. Even when they&apos;re in the middle of service.
+              </p>
+            </FadeUp>
           </div>
-          <p style={{ fontFamily: geist, fontSize: 12, color: C.dimmest }}>
-            Early access · London venues only · No credit card
-          </p>
-
         </div>
       </section>
 
-      {divider}
+      {/* ── PRODUCT ── */}
+      <section id="product" style={{ ...secPad, borderTop: `1px solid ${P.border}` }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <SectionHead
+            eyebrow="The Product"
+            headline={<>Three things.<br />That&apos;s the whole product.</>}
+            mob={mob} tab={tab}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3, 1fr)", gap: gap, marginTop: mob ? 40 : 56 }}>
+            {[
+              {
+                n: "01", title: "Reads the enquiry",
+                body: "Date, headcount, event type, budget range. Clem has it all before you've opened the message. You see a brief, not a wall of text from a stranger.",
+              },
+              {
+                n: "02", title: "Drafts the reply",
+                body: "Personalised, in your voice, in under a minute. Not a template that makes you sound like a hotel chain. Written for this person, this booking, this date.",
+              },
+              {
+                n: "03", title: "Moves the pipeline",
+                body: "Knows who to chase and when. Every lead tracked, every follow-up timed — without the spreadsheet you'll stop updating by Tuesday.",
+              },
+            ].map((item, i) => (
+              <FadeUp key={item.n} delay={i * 80}>
+                <div className="dark-feat-card">
+                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, marginBottom: 18, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14 }}>
+                    {item.n}
+                  </div>
+                  <h3 style={{ fontFamily: geist, fontSize: 19, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", lineHeight: 1.3, marginBottom: 12 }}>
+                    {item.title}
+                  </h3>
+                  <p style={{ fontFamily: geist, fontSize: 14, color: P.dim, lineHeight: 1.75 }}>
+                    {item.body}
+                  </p>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* ── SECTION 2: PEEKABOO PREVIEW ── */}
-      <section>
-        <div style={{ paddingLeft: px, paddingRight: px, paddingTop: mob ? 48 : 64, paddingBottom: mob ? 28 : 36 }}>
+      {/* ── HOW IT WORKS ── */}
+      <section id="how" style={{ ...secPad, borderTop: `1px solid ${P.border}` }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <SectionHead
+            eyebrow="How It Works"
+            headline="Set up in an afternoon. Running by evening."
+            mob={mob} tab={tab}
+          />
+          <div style={{ marginTop: mob ? 40 : 56, display: "flex", flexDirection: "column", gap: mob ? 48 : 64 }}>
+
+            {/* Step 01 */}
+            <FadeUp delay={0}>
+              <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: gap, alignItems: "start" }}>
+                <div>
+                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14, marginBottom: 14 }}>01</div>
+                  <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>Drop the snippet</h3>
+                  <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.75 }}>
+                    One line of code on your website. Every enquiry from that page lands directly in Foyer.
+                  </p>
+                </div>
+                <div>
+                  <div style={{
+                    background: "rgba(244,237,228,0.04)",
+                    border: `1px solid ${P.border}`,
+                    borderRadius: 4,
+                    padding: "16px 20px",
+                    position: "relative",
+                  }}>
+                    <pre style={{ fontFamily: mono, fontSize: mob ? 11 : 13, color: P.dim, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all", lineHeight: 1.6 }}>
+                      {WIDGET_SNIPPET}
+                    </pre>
+                    <button onClick={handleCopy} className="btn-primary"
+                      style={{
+                        position: "absolute", top: 12, right: 12,
+                        background: copied ? "rgba(244,237,228,0.12)" : "rgba(244,237,228,0.06)",
+                        border: `1px solid ${P.border}`,
+                        borderRadius: 4, padding: "4px 10px",
+                        fontFamily: geist, fontSize: 12, color: P.dim,
+                      }}>
+                      {copied ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Step 02 */}
+            <FadeUp delay={0}>
+              <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: gap, alignItems: "start" }}>
+                <div>
+                  <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14, marginBottom: 14 }}>02</div>
+                  <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>Clem reads it first</h3>
+                  <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.75 }}>
+                    Before you see the message, Clem has it qualified. Budget confirmed, headcount noted, event type matched. You get the brief, not the noise.
+                  </p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: mob ? "flex-start" : "center" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 12px" }}>
+                      {[0, 0.6].map((delay, i) => (
+                        <span key={i} style={{
+                          position: "absolute", inset: 0, borderRadius: "50%",
+                          border: `1px solid rgba(217,121,66,${0.35 - i * 0.12})`,
+                          animation: `ring-pulse 2.4s ease-out ${delay}s infinite`,
+                        }} />
+                      ))}
+                      <div style={{
+                        position: "absolute", inset: 0, borderRadius: "50%",
+                        background: C.clem,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <FoyerMark size={32} color={C.cream} />
+                      </div>
+                    </div>
+                    <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer, letterSpacing: "0.04em" }}>
+                      The enquiry form, live on any site
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Step 03 */}
+            <FadeUp delay={0}>
+              <div>
+                <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14, marginBottom: 14 }}>03</div>
+                <h3 style={{ fontFamily: geist, fontSize: 22, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 12 }}>You review and send</h3>
+                <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.75, maxWidth: 500 }}>
+                  See Clem&apos;s draft, edit or approve, and send in one click. Every conversation threaded, every lead tracked.
+                </p>
+              </div>
+            </FadeUp>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── BROWSER MOCKUP ── */}
+      <section id="mockup" style={{ ...secPad, borderTop: `1px solid ${P.border}` }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <FadeUp>
-            <div style={{ display: "flex", alignItems: sm ? "flex-start" : "flex-end", flexDirection: sm ? "column" : "row", justifyContent: "space-between", gap: 16 }}>
-              <h2 style={{ fontFamily: geist, fontSize: h2Sz, fontWeight: 700, color: C.ink, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-                See what&apos;s running<br />in the background.
-              </h2>
-              <p style={{ fontFamily: geist, fontSize: 14, color: C.dimmer, maxWidth: 320, lineHeight: 1.65, paddingBottom: 4 }}>
-                Move your cursor over the preview to explore the platform. Every lead, conversation, and proposal — in one place.
-              </p>
+            <div style={{ border: `1px solid ${P.border}`, borderRadius: 8, overflow: "hidden" }}>
+              {/* Chrome bar */}
+              <div style={{
+                height: 36, background: "rgba(244,237,228,0.06)",
+                display: "flex", alignItems: "center",
+                paddingLeft: 14, gap: 8,
+                borderBottom: `1px solid ${P.border}`,
+              }}>
+                {["#A94A3A","#D97942","#7A8A6F"].map((c, i) => (
+                  <span key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.7 }} />
+                ))}
+                <div style={{
+                  flex: 1, margin: "0 16px", height: 22,
+                  background: "rgba(244,237,228,0.05)",
+                  borderRadius: 4, border: `1px solid ${P.border}`,
+                  display: "flex", alignItems: "center", paddingLeft: 10,
+                }}>
+                  <span style={{ fontFamily: mono, fontSize: 11, color: P.dimmer }}>app.findfoyer.com</span>
+                </div>
+              </div>
+
+              {/* App interior */}
+              <div style={{ display: "flex", minHeight: mob ? 260 : 380, background: C.ink, position: "relative" }}>
+                {!mob && (
+                  <div style={{
+                    width: 180, flexShrink: 0, borderRight: `1px solid ${P.border}`,
+                    padding: "20px 16px", display: "flex", flexDirection: "column", gap: 8,
+                  }}>
+                    <Skel w="60%" h={16} />
+                    {[70, 90, 80, 75, 85, 65].map((w, i) => (
+                      <Skel key={i} w={`${w}%`} h={14} />
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ flex: 1, padding: "20px", display: "flex", gap: 12, overflowX: "auto" }}>
+                  {["New", "Qualified", "Proposal Sent", "Confirmed"].map((col, ci) => (
+                    <div key={col} style={{ minWidth: mob ? 120 : 160, flexShrink: 0 }}>
+                      <div style={{ marginBottom: 10 }}>
+                        <Skel w="70%" h={13} />
+                      </div>
+                      {[0, 1, ci === 0 ? 2 : -1].filter(x => x >= 0).map((_, ki) => (
+                        <div key={ki} style={{
+                          background: "rgba(244,237,228,0.04)",
+                          border: `1px solid ${P.border}`,
+                          borderRadius: 4, padding: 10, marginBottom: 8,
+                        }}>
+                          <Skel w="85%" h={12} />
+                          <Skel w="60%" h={10} />
+                          <Skel w="40%" h={10} />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{
+                  position: "absolute", bottom: 16, right: 16,
+                  display: "flex", alignItems: "flex-end", gap: 8,
+                }}>
+                  <div style={{
+                    background: "rgba(31,20,25,0.9)",
+                    border: `1px solid ${P.border}`,
+                    borderRadius: 6, padding: "8px 12px",
+                    maxWidth: 200,
+                  }}>
+                    <p style={{ fontFamily: geist, fontSize: 11, color: P.text, margin: 0, lineHeight: 1.5 }}>
+                      Clem replied to 3 enquiries while you were away
+                    </p>
+                  </div>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: "50%",
+                    background: C.clem, flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <FoyerMark size={16} color={C.cream} />
+                  </div>
+                </div>
+              </div>
             </div>
           </FadeUp>
         </div>
-        <Peekaboo cw={cw} />
       </section>
 
-      {divider}
-
-      {/* ── SECTION 3: WHAT IT DOES ── */}
-      <section style={{ paddingLeft: px, paddingRight: px, paddingTop: mob ? 64 : 88, paddingBottom: mob ? 64 : 88 }}>
+      {/* ── DASHBOARD ── */}
+      <section id="dashboard" style={{ ...secPad, borderTop: `1px solid ${P.border}` }}>
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
-          <FadeUp>
-            <h2 style={{ fontFamily: geist, fontSize: h2Sz, fontWeight: 700, color: C.ink, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: mob ? 40 : 60 }}>
-              Three things.<br />That&apos;s the whole product.
-            </h2>
-          </FadeUp>
-          <div style={{ display: "grid", gridTemplateColumns: cols, gap: gap }}>
-
-            <FadeUp delay={0}>
-              <div className="feat-card">
-                <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, marginBottom: 18, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14 }}>01</div>
-                <h3 style={{ fontFamily: geist, fontSize: 19, fontWeight: 700, color: C.ink, letterSpacing: "-0.02em", lineHeight: 1.3, marginBottom: 12 }}>Reads the enquiry</h3>
-                <p style={{ fontFamily: geist, fontSize: 14, color: C.dim, lineHeight: 1.75 }}>
-                  Date, headcount, event type, budget range — Clem has it all before you&apos;ve even opened the message. You see a brief, not a wall of text from a stranger.
-                </p>
-              </div>
-            </FadeUp>
-
-            <FadeUp delay={80}>
-              <div className="feat-card">
-                <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, marginBottom: 18, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14 }}>02</div>
-                <h3 style={{ fontFamily: geist, fontSize: 19, fontWeight: 700, color: C.ink, letterSpacing: "-0.02em", lineHeight: 1.3, marginBottom: 12 }}>Drafts the reply</h3>
-                <p style={{ fontFamily: geist, fontSize: 14, color: C.dim, lineHeight: 1.75 }}>
-                  Personalised, in your voice, in under a minute. Not a template that makes you sound like a hotel chain. Written for this person, this booking, this date.
-                </p>
-              </div>
-            </FadeUp>
-
-            <FadeUp delay={160}>
-              <div className="feat-card">
-                <div style={{ fontFamily: geist, fontSize: 12, fontWeight: 700, color: C.clem, marginBottom: 18, letterSpacing: "0.06em", borderTop: `1px solid ${C.clem}`, paddingTop: 14 }}>03</div>
-                <h3 style={{ fontFamily: geist, fontSize: 19, fontWeight: 700, color: C.ink, letterSpacing: "-0.02em", lineHeight: 1.3, marginBottom: 12 }}>Moves the pipeline</h3>
-                <p style={{ fontFamily: geist, fontSize: 14, color: C.dim, lineHeight: 1.75 }}>
-                  Knows who to chase and when. Every lead tracked, every follow-up timed — without the spreadsheet you&apos;ll stop updating by Tuesday.
-                </p>
-              </div>
-            </FadeUp>
-
+          <SectionHead
+            eyebrow="The Dashboard"
+            headline="Everything in one place."
+            mob={mob} tab={tab}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(2, 1fr)", gap: gap, marginTop: mob ? 40 : 56 }}>
+            {[
+              { Icon: Kanban, title: "Pipeline", body: "Every lead through every stage. New, Qualified, Proposal Sent, Confirmed. Nothing slips." },
+              { Icon: MessageSquare, title: "AI-suggested replies", body: "Clem drafts the response. Review and send in one click. Or let Clem send automatically — your call." },
+              { Icon: FileText, title: "Proposals", body: "Structured, comparable, out in minutes. Not a PDF attachment from 2019." },
+              { Icon: Calendar, title: "Calendar sync", body: "Your availability, always current. No double-bookings, no back-and-forth on dates that are already gone." },
+            ].map((item, i) => (
+              <FadeUp key={item.title} delay={i * 60}>
+                <div className="dark-feat-card" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                  <div style={{ flexShrink: 0, marginTop: 2 }}>
+                    <item.Icon size={20} color={C.clem} aria-hidden />
+                  </div>
+                  <div>
+                    <h3 style={{ fontFamily: geist, fontSize: 17, fontWeight: 700, color: P.text, letterSpacing: "-0.02em", marginBottom: 8 }}>
+                      {item.title}
+                    </h3>
+                    <p style={{ fontFamily: geist, fontSize: 14, color: P.dim, lineHeight: 1.7 }}>
+                      {item.body}
+                    </p>
+                  </div>
+                </div>
+              </FadeUp>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" style={{ ...secPad, borderTop: `1px solid ${P.border}` }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <SectionHead
+            eyebrow="Pricing"
+            headline="Simple, London-first pricing."
+            mob={mob} tab={tab}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3, 1fr)", gap: gap, marginTop: mob ? 40 : 56, alignItems: "start" }}>
+            {[
+              {
+                name: "Early Access", price: "£0", per: "/mo", featured: false,
+                features: ["50 enquiries/month", "1 inbox", "Clem AI replies"],
+                cta: "Join waitlist", muted: true,
+              },
+              {
+                name: "Growth", price: "£49", per: "/mo", featured: true, popular: true,
+                features: ["200 enquiries/month", "Gmail integration", "Full pipeline", "Proposals"],
+                cta: "Get early access", muted: false,
+              },
+              {
+                name: "Scale", price: "£149", per: "/mo", featured: false,
+                features: ["Unlimited enquiries", "Multiple inboxes", "Custom AI voice", "Dedicated setup"],
+                cta: "Join waitlist", muted: true,
+              },
+            ].map((plan, i) => (
+              <FadeUp key={plan.name} delay={i * 80}>
+                <div style={{
+                  border: `1px solid ${plan.featured ? P.borderBright : P.border}`,
+                  background: plan.featured ? "rgba(244,237,228,0.03)" : "transparent",
+                  borderRadius: 8, padding: 28, position: "relative",
+                }}>
+                  {plan.popular && (
+                    <div style={{
+                      position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
+                      background: C.clem, color: C.ink,
+                      fontFamily: geist, fontSize: 11, fontWeight: 700,
+                      borderRadius: 999, padding: "3px 12px", whiteSpace: "nowrap",
+                    }}>
+                      ★ Most popular
+                    </div>
+                  )}
+                  <div style={{ fontFamily: geist, fontSize: 13, fontWeight: 600, color: P.dim, marginBottom: 12 }}>{plan.name}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 20 }}>
+                    <span style={{ fontFamily: geist, fontSize: 36, fontWeight: 800, color: P.text, letterSpacing: "-0.03em" }}>{plan.price}</span>
+                    <span style={{ fontFamily: geist, fontSize: 13, color: P.dimmer }}>{plan.per}</span>
+                  </div>
+                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px", display: "flex", flexDirection: "column", gap: 10 }}>
+                    {plan.features.map(f => (
+                      <li key={f} style={{ fontFamily: geist, fontSize: 14, color: P.dim, display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ color: C.clem, fontSize: 16, lineHeight: 1 }}>—</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+                  <button className="btn-primary" onClick={() => scrollTo("final-cta")}
+                    style={{
+                      width: "100%", background: plan.muted ? "transparent" : C.clem,
+                      color: plan.muted ? P.dim : C.ink,
+                      border: `1px solid ${plan.muted ? P.border : C.clem}`,
+                      borderRadius: 4, padding: "11px 0",
+                      fontFamily: geist, fontSize: 14, fontWeight: 600,
+                    }}>
+                    {plan.cta}
+                  </button>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
+          <FadeUp delay={100}>
+            <p style={{ fontFamily: geist, fontSize: 13, color: P.dimmer, marginTop: 24, textAlign: "center" }}>
+              Add-on: additional inboxes £15/mo each. All plans include unlimited venues.
+            </p>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section id="faq" style={{ ...secPad, borderTop: `1px solid ${P.border}` }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <SectionHead
+            eyebrow="FAQ"
+            headline="Straight answers."
+            lede="Things venue managers ask before signing up."
+            mob={mob} tab={tab}
+          />
+          <div style={{ marginTop: mob ? 40 : 56, borderTop: `1px solid ${P.border}` }}>
+            {[
+              { q: "How does Clem know my venue?", a: "You give Clem your menus, capacity, pricing, and availability. They learn the rest from every enquiry they handle." },
+              { q: "Does this replace my email inbox?", a: "No. Enquiries still land in your email. Foyer runs alongside it — Clem just handles them before you've had a chance to open them." },
+              { q: "What kind of venues can use Foyer?", a: "Any space taking private events for 20–150 guests. Restaurants with private dining rooms, hotels, members clubs, galleries, and private hire spaces." },
+              { q: "Is Foyer only for London?", a: "For now. We're starting in London and expanding in late 2026." },
+              { q: "How much does it actually cost?", a: "Free during early access. Paid plans from £49/month launch later this year. No credit card to join the waitlist." },
+            ].map((item, i) => (
+              <FadeUp key={i} delay={i * 40}>
+                <details className="faq-details">
+                  <summary className="faq-summary">
+                    <span style={{ fontFamily: geist, fontSize: mob ? 15 : 17, fontWeight: 600, color: P.text, lineHeight: 1.4 }}>
+                      {item.q}
+                    </span>
+                  </summary>
+                  <p style={{ fontFamily: geist, fontSize: 15, color: P.dim, lineHeight: 1.75, paddingBottom: 20, marginTop: 0 }}>
+                    {item.a}
+                  </p>
+                </details>
+              </FadeUp>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section id="final-cta" style={{ ...secPad, paddingTop: mob ? 96 : 160, paddingBottom: mob ? 96 : 160, borderTop: `1px solid ${P.border}`, textAlign: "center" }}>
+        <div style={{ maxWidth: 600, margin: "0 auto" }}>
+          <FadeUp>
+            <Eyebrow>[ Get Started ]</Eyebrow>
+            <h2 style={{ fontFamily: geist, fontSize: mob ? 32 : 48, fontWeight: 800, color: P.text, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 20 }}>
+              Stop losing bookings{mob ? " " : <br />}to whoever replies first.
+            </h2>
+            <p style={{ fontFamily: geist, fontSize: bSz, color: P.dim, lineHeight: 1.7, marginBottom: 36 }}>
+              Join the waitlist and be in the first group of London venues to use Foyer.
+            </p>
+            <div style={{ maxWidth: 460, margin: "0 auto 20px" }}>
+              <EmailForm stack={mob} dark />
+            </div>
+            <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer }}>
+              Early access · London venues only · No credit card
+            </p>
+          </FadeUp>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer id="waitlist" style={{
-        minHeight: 56, display: "flex", alignItems: "center",
-        justifyContent: "space-between", flexWrap: "wrap",
-        paddingLeft: px, paddingRight: px,
-        paddingTop: mob ? 14 : 0, paddingBottom: mob ? 14 : 0,
-        gap: 12,
-        background: C.ink,
-        borderTop: `1px solid ${P.border}`,
-      }}>
-        <img src="/brand/foyer-logo.svg" alt="foyer" style={{ height: 24 }} />
-
-        <div style={{ display: "flex", alignItems: "center", gap: mob ? 8 : 12 }}>
-          {/* Email */}
-          <a href="mailto:kha-ai@findfoyer.com" aria-label="Email us" className="a-link"
-            style={{ display: "flex", alignItems: "center", color: P.dimmer }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path d="m2 7 10 7 10-7" />
-            </svg>
-          </a>
-
-          {/* Join waitlist — outlined */}
-          <a href="mailto:kha-ai@findfoyer.com?subject=Join%20the%20Foyer%20waitlist" className="a-link"
-            style={{
-              fontFamily: geist, fontSize: 13, fontWeight: 600,
-              color: P.text, border: `1px solid rgba(244,237,228,0.22)`,
-              borderRadius: 4, padding: "6px 14px", textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}>
-            Join waitlist
-          </a>
-
-          {/* Be a beta tester — primary */}
-          <a href="mailto:kha-ai@findfoyer.com?subject=I%20want%20to%20be%20a%20Foyer%20beta%20tester" className="btn-primary"
-            style={{
-              fontFamily: geist, fontSize: 13, fontWeight: 700,
-              color: C.ink, background: C.clem,
-              borderRadius: 4, padding: "6px 16px", textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}>
-            Be a beta tester
-          </a>
+      <footer style={{ borderTop: `1px solid ${P.border}`, paddingLeft: px, paddingRight: px, paddingTop: mob ? 48 : 64, paddingBottom: mob ? 32 : 48 }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "2fr 1fr 1fr", gap: mob ? 40 : gap }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <FoyerMark size={28} color={C.clem} />
+                <span style={{ fontFamily: fraunces, fontSize: 18, fontWeight: 500, color: P.text, letterSpacing: "-0.01em" }}>foyer</span>
+              </div>
+              <p style={{ fontFamily: geist, fontSize: 14, color: P.dim, lineHeight: 1.65, maxWidth: 280, marginBottom: 12 }}>
+                The private events platform for London venues.
+              </p>
+              <a href="mailto:kha-ai@findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 13, color: P.dimmer, textDecoration: "none" }}>
+                kha-ai@findfoyer.com
+              </a>
+            </div>
+            <div>
+              <div style={{ fontFamily: geist, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: P.dimmer, marginBottom: 16 }}>Product</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[["How it works", "how"], ["Pricing", "pricing"], ["Create account", "final-cta"], ["Sign in", "final-cta"]].map(([label, id]) => (
+                  <button key={label} onClick={() => scrollTo(id)} className="a-link"
+                    style={{ background: "none", border: "none", textAlign: "left", fontFamily: geist, fontSize: 14, color: P.dim }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontFamily: geist, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: P.dimmer, marginBottom: 16 }}>Connect</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <a href="https://findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 14, color: P.dim, textDecoration: "none" }}>App</a>
+                <a href="mailto:kha-ai@findfoyer.com" className="a-link" style={{ fontFamily: geist, fontSize: 14, color: P.dim, textDecoration: "none" }}>Email us</a>
+                <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="a-link"
+                  style={{ background: "none", border: "none", textAlign: "left", fontFamily: geist, fontSize: 14, color: P.dim }}>
+                  Back to top
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style={{ borderTop: `1px solid ${P.border}`, marginTop: mob ? 40 : 56, paddingTop: 24 }}>
+            <p style={{ fontFamily: geist, fontSize: 12, color: P.dimmer, margin: 0 }}>© 2026 Foyer · findfoyer.com</p>
+          </div>
         </div>
       </footer>
+
+      {/* ── FLOATING PILL ── */}
+      <div style={{
+        position: "fixed", bottom: 24, right: 24, zIndex: 400,
+        opacity: floatVisible ? 1 : 0,
+        transform: floatVisible ? "translateY(0)" : "translateY(8px)",
+        transition: "opacity 0.3s ease, transform 0.3s ease",
+        pointerEvents: floatVisible ? "auto" : "none",
+      }}>
+        <button className="btn-primary" onClick={() => scrollTo("final-cta")}
+          style={{
+            background: C.clem, color: C.ink, border: "none",
+            borderRadius: 999, padding: "12px 24px",
+            fontFamily: geist, fontSize: 14, fontWeight: 700,
+            boxShadow: "0 8px 32px rgba(217,121,66,0.25)",
+          }}>
+          Get early access →
+        </button>
+      </div>
 
     </div>
   )
